@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://do0y2sp1egpxk"]
+
+[ext_resource type="Script" path="res://src/debug.gd" id="1_a3brh"]
+[ext_resource type="Script" path="res://src/radar_graph.gd" id="2_k8q7i"]
+
+[node name="Debug" type="Node2D"]
+position = Vector2(161, 132)
+script = ExtResource("1_a3brh")
+
+[node name="RadarGraph" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("2_k8q7i")
+background_color = Color(0.705058, 0.802439, 0.972596, 1)
+key_count = 7
+radius = 40.0
