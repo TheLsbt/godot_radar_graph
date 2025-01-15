@@ -2,7 +2,7 @@
 extends Control
 class_name RadarGraph
 
-@export_group("colors")
+@export_group("Colors")
 @export var background_color: Color
 @export var outline_color: Color
 @export var graph_color: Color
@@ -106,6 +106,34 @@ func _set(property: StringName, value: Variant) -> bool:
 				key_items[index]["custom_color"] = value
 				queue_redraw()
 				return true
+	return false
+
+
+func _property_can_revert(property: StringName) -> bool:
+	if property.begins_with("items/key_"):
+		var index := property.get_slice("_", 1).to_int()
+
+		if property == &"items/key_%d/value" % index and get(property) != 0:
+			return true
+		elif property == &"items/key_%d/use_custom_color" % index and get(property):
+			return true
+		elif property == &"items/key_%d/custom_color" % index and get(property) != Color.BLACK:
+			return true
+
+	return false
+
+
+func _property_get_revert(property: StringName) -> Variant:
+	if property.begins_with("items/key_"):
+		var index := property.get_slice("_", 1).to_int()
+
+		if property == &"items/key_%d/value" % index:
+			return 0
+		elif property == &"items/key_%d/use_custom_color" % index:
+			return false
+		elif property == &"items/key_%d/custom_color" % index:
+			return Color.BLACK
+
 	return false
 
 
