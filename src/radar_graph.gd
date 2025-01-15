@@ -6,6 +6,8 @@ class_name RadarGraph
 @export var background_color: Color
 @export var outline_color: Color
 @export var graph_color: Color
+@export var guide_color: Color
+
 
 @export_group("")
 @export_range(0, 1, 1, "or_greater") var key_count := 0:
@@ -21,6 +23,21 @@ var key_items: Array[Dictionary] = []:
 
 @export var min_value := 0.0
 @export var max_value := 100.0
+@export var show_guides := false:
+	set(value):
+		show_guides = value
+		queue_redraw()
+## If [member show_guides] is true and [member guide_step] if greater than 0, shows the guide step
+## every [member guide_step] units. Use [member guide_color] to customize the guide.
+@export var guide_step := 0.0:
+	set(value):
+		guide_step = value
+		queue_redraw()
+
+@export var guide_width := 1.0:
+	set(value):
+		guide_width = value
+		queue_redraw()
 
 @export var radius: float = 0.0
 
@@ -29,6 +46,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAW:
 		_draw_background()
 		_draw_graph()
+		_draw_guides()
 
 
 func _get_minimum_size() -> Vector2:
@@ -126,3 +144,25 @@ func _draw_graph() -> void:
 		points.append(center.lerp(target, value / max_value))
 
 	draw_polygon(points, _get_custom_colors())
+
+
+func _draw_guides() -> void:
+	if not show_guides or guide_step == 0:
+		return
+	var distance_covered := 0.0
+	var center := size / 2
+
+	while distance_covered <= max_value:
+		var percent := distance_covered / max_value * radius
+		var points := PackedVector2Array()
+		for index in range(key_count):
+			var target_angle := (PI * 2 * index / key_count) - PI * 0.5
+			var target: Vector2 = center + Vector2(cos(target_angle), sin(target_angle)) * percent
+			points.append(target)
+
+		points.append(points[0])
+
+		# TODO: Make guide antiailiased an option
+		draw_polyline(points, guide_color, guide_width, false)
+
+		distance_covered += guide_step
