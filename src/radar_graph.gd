@@ -6,8 +6,6 @@ class_name RadarGraph
 @export var background_color: Color
 @export var outline_color: Color
 @export var graph_color: Color
-@export var guide_color: Color
-
 
 @export_group("")
 @export_range(0, 1, 1, "or_greater") var key_count := 0:
@@ -23,10 +21,18 @@ var key_items: Array[Dictionary] = []:
 
 @export var min_value := 0.0
 @export var max_value := 100.0
+@export var radius: float = 0.0:
+	set(new_radius):
+		radius = new_radius
+		update_minimum_size()
+		queue_redraw()
+
+@export_group("Guide")
 @export var show_guides := false:
 	set(value):
 		show_guides = value
 		queue_redraw()
+@export var guide_color: Color
 ## If [member show_guides] is true and [member guide_step] if greater than 0, shows the guide step
 ## every [member guide_step] units. Use [member guide_color] to customize the guide.
 @export var guide_step := 0.0:
@@ -38,12 +44,7 @@ var key_items: Array[Dictionary] = []:
 	set(value):
 		guide_width = value
 		queue_redraw()
-
-@export var radius: float = 0.0:
-	set(new_radius):
-		radius = new_radius
-		update_minimum_size()
-		queue_redraw()
+@export_group("")
 
 
 func _notification(what: int) -> void:
