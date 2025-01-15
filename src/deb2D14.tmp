@@ -20,6 +20,16 @@ show_guides = true
 guide_color = Color(1, 1, 1, 1)
 guide_step = 20.0
 guide_width = 0.28
+items/key_0/value = 20.0
+items/key_0/use_custom_color = false
+items/key_1/value = 20.0
+items/key_1/use_custom_color = false
+items/key_2/value = 60.0
+items/key_2/use_custom_color = false
+items/key_3/value = 80.0
+items/key_3/use_custom_color = false
+items/key_4/value = 20.0
+items/key_4/use_custom_color = false
 
 [node name="SpinBox" type="SpinBox" parent="."]
 visible = false

@@ -2,6 +2,9 @@
 extends Control
 class_name RadarGraph
 
+## A simple radar graph plugin that is animateable. Note, that using [Theme]'s is not possible due
+## to a Godot Limitation.
+
 @export_group("Colors")
 @export var background_color: Color
 @export var outline_color: Color
@@ -45,6 +48,16 @@ var key_items: Array[Dictionary] = []:
 		guide_width = value
 		queue_redraw()
 @export_group("")
+
+const Merror = preload("res://src/merror.gd")
+
+
+# Functions for users
+
+func get_item(index: int) -> Dictionary:
+	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+		return {}
+	return key_items[index]
 
 
 func _notification(what: int) -> void:
