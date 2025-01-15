@@ -60,6 +60,19 @@ func get_item(index: int) -> Dictionary:
 	return key_items[index]
 
 
+func set_item_value(index: int, value: float) -> void:
+	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+		return
+	key_items[index]["value"] = clampf(value, min_value, max_value)
+
+
+func get_item_value(index: int) -> float:
+	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+		return clampf(0, min_value, max_value)
+	return key_items[index].get_or_add("value", clampf(0, min_value, max_value))
+
+
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAW:
 		_draw_background()
