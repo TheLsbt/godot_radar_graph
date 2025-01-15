@@ -39,7 +39,11 @@ var key_items: Array[Dictionary] = []:
 		guide_width = value
 		queue_redraw()
 
-@export var radius: float = 0.0
+@export var radius: float = 0.0:
+	set(new_radius):
+		radius = new_radius
+		update_minimum_size()
+		queue_redraw()
 
 
 func _notification(what: int) -> void:

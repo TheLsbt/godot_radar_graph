@@ -34,5 +34,6 @@ items/key_4/value = 10.0
 items/key_4/use_custom_color = false
 
 [node name="SpinBox" type="SpinBox" parent="."]
+visible = false
 offset_right = 83.0625
 offset_bottom = 31.0
