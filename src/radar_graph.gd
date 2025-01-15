@@ -5,39 +5,124 @@ class_name RadarGraph
 @export_group("colors")
 @export var background_color: Color
 @export var outline_color: Color
+@export var graph_color: Color
 
 @export_group("")
 @export_range(0, 1, 1, "or_greater") var key_count := 0:
 	set(new_key_count):
 		key_count = new_key_count
+		key_items.resize(key_count)
+		notify_property_list_changed()
 		queue_redraw()
 
-@export var titles: Array[String] = []
-@export var values: Array[float] = []:
-	set(new_values):
-		if new_values.size() > key_count:
-			printerr("The size of this array cannot be greater than key_count")
-			return
-		values = new_values
-		queue_redraw()
+var key_items: Array[Dictionary] = []:
+	set(new_key_items):
+		key_items = new_key_items
+
+@export var min_value := 0.0
+@export var max_value := 100.0
+
 @export var radius: float = 0.0
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAW:
-		var points := make_polygon(size / 2)
-		draw_polygon(points, [background_color])
+		_draw_background()
+		_draw_graph()
 
 
 func _get_minimum_size() -> Vector2:
 	return Vector2(radius, radius) * 2
 
 
-## Returns a polygon based on [param offset], [member key_count] and [member radius].
-func make_polygon(offset: Vector2) -> PackedVector2Array:
+func _get_property_list() -> Array[Dictionary]:
+	var properties: Array[Dictionary] = []
+
+	for i in range(key_count):
+		properties.append({
+			"name": "items/key_%d/value" % i,
+			"type": TYPE_FLOAT,
+		})
+		properties.append({
+			"name": "items/key_%d/use_custom_color" % i,
+			"type": TYPE_BOOL,
+		})
+		if key_items[i].get("use_custom_color", false):
+			properties.append({
+				"name": "items/key_%d/custom_color" % i,
+				"type": TYPE_COLOR,
+			})
+
+	return properties
+
+
+func _get(property: StringName) -> Variant:
+	if property.begins_with("items/key_"):
+		var index := property.get_slice("_", 1).to_int()
+
+		match property.get_slice("/", 2):
+			"value":
+				return key_items[index].get_or_add("value", min_value)
+			"use_custom_color":
+				return key_items[index].get_or_add("use_custom_color", false)
+			"custom_color":
+				return key_items[index].get_or_add("custom_color", Color.BLACK)
+	return
+
+
+func _set(property: StringName, value: Variant) -> bool:
+	if property.begins_with("items/key_"):
+		var index := property.get_slice("_", 1).to_int()
+
+		match property.get_slice("/", 2):
+			"value":
+				key_items[index]["value"] = clampf(value, min_value, max_value)
+				queue_redraw()
+				return true
+			"use_custom_color":
+				key_items[index]["use_custom_color"] = value
+				notify_property_list_changed()
+				queue_redraw()
+				return true
+			"custom_color":
+				key_items[index]["custom_color"] = value
+				queue_redraw()
+				return true
+	return false
+
+
+func _get_custom_colors() -> PackedColorArray:
+	var colors := PackedColorArray()
+	for index in range(key_count):
+		if get(&"items/key_%d/use_custom_color" % index):
+			colors.append(get(&"items/key_%d/custom_color" % index))
+		else:
+			colors.append(graph_color)
+	return colors
+
+
+# Drawing
+
+func _draw_background() -> void:
+	var center := size / 2
 	var points := PackedVector2Array()
 	for i in range(key_count):
 		var angle := (PI * 2 * i / key_count) - PI * 0.5
-		var point = offset + Vector2(cos(angle), sin(angle)) * radius
+		var point = center + Vector2(cos(angle), sin(angle)) * radius
 		points.append(point)
-	return points
+
+	draw_polygon(points, [background_color])
+
+
+func _draw_graph() -> void:
+	var center := size / 2
+	var points := PackedVector2Array()
+
+	for index in key_items.size():
+		var value: float = get(&"items/key_%d/value" % index)
+		var target_angle := (PI * 2 * index / key_count) - PI * 0.5
+		var target: Vector2 = center + Vector2(cos(target_angle), sin(target_angle)) * radius
+
+		points.append(center.lerp(target, value / max_value))
+
+	draw_polygon(points, _get_custom_colors())
