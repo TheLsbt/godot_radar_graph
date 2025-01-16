@@ -1,35 +1,53 @@
-[gd_scene load_steps=3 format=3 uid="uid://do0y2sp1egpxk"]
+[gd_scene load_steps=4 format=3 uid="uid://do0y2sp1egpxk"]
 
 [ext_resource type="Script" path="res://src/debug.gd" id="1_a3brh"]
 [ext_resource type="Script" path="res://src/radar_graph.gd" id="2_k8q7i"]
+[ext_resource type="FontFile" uid="uid://botqsldqnqjxn" path="res://src/RobotoMono-VariableFont_wght.ttf" id="3_v0rtb"]
 
 [node name="Debug" type="Node2D"]
 position = Vector2(161, 132)
 script = ExtResource("1_a3brh")
 
-[node name="RadarGraph" type="Panel" parent="."]
+[node name="RadarGraph" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
 offset_right = 80.0
 offset_bottom = 80.0
 script = ExtResource("2_k8q7i")
+font = ExtResource("3_v0rtb")
+title_seperation = 2.375
 background_color = Color(0.705058, 0.802439, 0.972596, 1)
 graph_color = Color(0.8394, 0.89315, 0.984997, 1)
-key_count = 5
-min_value = 20.0
-radius = 40.0
+key_count = 8
+radius = 120.0
 show_guides = true
 guide_color = Color(1, 1, 1, 1)
 guide_step = 20.0
 guide_width = 0.28
-items/key_0/value = 20.0
+items/key_0/value = 22.0
+items/key_0/title = "Number 1"
 items/key_0/use_custom_color = false
 items/key_1/value = 20.0
+items/key_1/title = "Number 2"
 items/key_1/use_custom_color = false
-items/key_2/value = 60.0
+items/key_2/value = 70.0
+items/key_2/title = "Number 3"
 items/key_2/use_custom_color = false
 items/key_3/value = 80.0
+items/key_3/title = "Number 4"
 items/key_3/use_custom_color = false
 items/key_4/value = 20.0
+items/key_4/title = "Number 5"
 items/key_4/use_custom_color = false
+items/key_5/value = 20.0
+items/key_5/title = "Number 6"
+items/key_5/use_custom_color = false
+items/key_6/value = 0.0
+items/key_6/title = "Number 7"
+items/key_6/use_custom_color = false
+items/key_7/value = 0.0
+items/key_7/title = "Number 8"
+items/key_7/use_custom_color = false
 
 [node name="SpinBox" type="SpinBox" parent="."]
 visible = false

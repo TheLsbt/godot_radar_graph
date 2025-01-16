@@ -5,6 +5,20 @@ class_name RadarGraph
 ## A simple radar graph plugin that is animateable. Note, that using [Theme]'s is not possible due
 ## to a Godot Limitation.
 
+@export_group("Styling")
+@export var font: Font:
+	set(v):
+		font = v
+		queue_redraw()
+@export var font_size: int = 16:
+	set(v):
+		font_size = v
+		queue_redraw()
+@export var title_seperation: float = 8:
+	set(v):
+		title_seperation = v
+		queue_redraw()
+
 @export_group("Colors")
 @export var background_color: Color
 @export var outline_color: Color
@@ -72,12 +86,24 @@ func get_item_value(index: int) -> float:
 	return key_items[index].get_or_add("value", clampf(0, min_value, max_value))
 
 
+func set_item_title(index: int, title: String) -> void:
+	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+		return
+	key_items[index]["title"] = title
+
+
+func get_item_title(index: int) -> String:
+	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+		return ""
+	return key_items[index].get_or_add("title", "")
+
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAW:
 		_draw_background()
 		_draw_graph()
 		_draw_guides()
+		_draw_titles()
 
 
 func _get_minimum_size() -> Vector2:
@@ -92,6 +118,11 @@ func _get_property_list() -> Array[Dictionary]:
 			"name": "items/key_%d/value" % i,
 			"type": TYPE_FLOAT,
 		})
+		properties.append({
+			"name": "items/key_%d/title" % i,
+			"type": TYPE_STRING,
+		})
+
 		properties.append({
 			"name": "items/key_%d/use_custom_color" % i,
 			"type": TYPE_BOOL,
@@ -116,6 +147,8 @@ func _get(property: StringName) -> Variant:
 				return key_items[index].get_or_add("use_custom_color", false)
 			"custom_color":
 				return key_items[index].get_or_add("custom_color", Color.BLACK)
+			"title":
+				return key_items[index].get_or_add("title", "")
 	return
 
 
@@ -136,6 +169,10 @@ func _set(property: StringName, value: Variant) -> bool:
 			"custom_color":
 				key_items[index]["custom_color"] = value
 				queue_redraw()
+				return true
+			"title":
+				queue_redraw()
+				key_items[index]["title"] = value
 				return true
 	return false
 
@@ -180,13 +217,18 @@ func _get_custom_colors() -> PackedColorArray:
 
 # Drawing
 
+
+func _get_polygon_point(index: int) -> Vector2:
+	var center := size / 2
+	var angle := (PI * 2 * index / key_count) - PI * 0.5
+	return center + Vector2(cos(angle), sin(angle)) * radius
+
+
 func _draw_background() -> void:
 	var center := size / 2
 	var points := PackedVector2Array()
 	for i in range(key_count):
-		var angle := (PI * 2 * i / key_count) - PI * 0.5
-		var point = center + Vector2(cos(angle), sin(angle)) * radius
-		points.append(point)
+		points.append(_get_polygon_point(i))
 
 	draw_polygon(points, [background_color])
 
@@ -197,9 +239,7 @@ func _draw_graph() -> void:
 
 	for index in key_items.size():
 		var value: float = get(&"items/key_%d/value" % index)
-		var target_angle := (PI * 2 * index / key_count) - PI * 0.5
-		var target: Vector2 = center + Vector2(cos(target_angle), sin(target_angle)) * radius
-
+		var target := _get_polygon_point(index)
 		points.append(center.lerp(target, value / max_value))
 
 	draw_polygon(points, _get_custom_colors())
@@ -225,3 +265,73 @@ func _draw_guides() -> void:
 		draw_polyline(points, guide_color, guide_width, false)
 
 		distance_covered += guide_step
+
+
+enum Location {
+	UNKNOWN,
+	TOP_LEFT, TOP_CENTER, TOP_RIGHT,
+	CENTER_LEFT, CENTER_RIGHT,
+	BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT
+	}
+
+
+func _get_point_as_location(point: Vector2) -> Location:
+	var center := size / 2
+
+	if point.x < center.x and point.y < center.y:
+		return Location.TOP_LEFT
+	elif point.x == center.x and point.y < center.y:
+		return Location.TOP_CENTER
+	elif point.x > center.x and point.y < center.y:
+		return Location.TOP_RIGHT
+	elif point.x < center.x and point.y == center.y:
+		return Location.CENTER_LEFT
+	elif point.x > center.x and point.y == center.y:
+		return Location.CENTER_RIGHT
+	elif point.x < center.x and point.y > center.y:
+		return Location.BOTTOM_LEFT
+	elif point.x == center.x and point.y > center.y:
+		return Location.BOTTOM_CENTER
+	elif point.x > center.x and point.y > center.y:
+		return Location.BOTTOM_RIGHT
+	return Location.UNKNOWN
+
+
+func _draw_titles() -> void:
+	var center := size / 2
+	for index in range(key_count):
+		var pos := _get_polygon_point(index)
+
+		var title := get_item_title(index)
+
+		var title_size := font.get_string_size(title, 0, -1, font_size)
+
+		var dir := center.direction_to(pos)
+		# This position is a little bit outside of the background
+		var font_pos := pos + Vector2(title_seperation, title_seperation) * dir
+		var font_offset := Vector2.ZERO
+
+		var location := _get_point_as_location(pos)
+		match location:
+			Location.TOP_LEFT:
+				font_offset = Vector2(-title_size.x, 0)
+			Location.TOP_CENTER:
+				font_offset = Vector2(-title_size.x / 2, 0)
+			Location.TOP_RIGHT:
+				pass # The default behaviour is fine
+			Location.CENTER_LEFT:
+				font_offset = Vector2(-title_size.x, title_size.y * 0.25)
+			Location.CENTER_RIGHT:
+				font_offset = Vector2(0, title_size.y * 0.25)
+			Location.BOTTOM_LEFT:
+				font_offset = Vector2(-title_size.x, title_size.y * 0.5)
+			Location.BOTTOM_CENTER:
+				font_offset = Vector2(-title_size.x / 2, title_size.y * 0.5)
+			Location.BOTTOM_RIGHT:
+				font_offset = Vector2(0, title_size.y * 0.5)
+
+		draw_circle(font_pos, 4, Color.RED)
+		draw_rect(Rect2(font_pos + font_offset - Vector2(0, title_size.y), title_size), Color.WHITE, false, 2)
+
+
+		draw_string(font, font_pos + font_offset, title, 0, -1, font_size)
