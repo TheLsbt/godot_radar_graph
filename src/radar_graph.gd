@@ -37,7 +37,11 @@ var key_items: Array[Dictionary] = []:
 		key_items = new_key_items
 
 @export var min_value := 0.0
-@export var max_value := 100.0
+@export var max_value := 100.0:
+	set(new_max_value):
+		max_value = new_max_value
+		if min_value > max_value:
+			min_value = max_value
 @export var radius: float = 0.0:
 	set(new_radius):
 		radius = new_radius
