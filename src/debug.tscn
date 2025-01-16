@@ -54,3 +54,6 @@ items/key_7/use_custom_color = false
 visible = false
 offset_right = 83.0625
 offset_bottom = 31.0
+min_value = 3.11
+max_value = 3.11
+value = 3.11
