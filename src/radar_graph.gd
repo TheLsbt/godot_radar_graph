@@ -56,7 +56,7 @@ enum Location {
 @export var title_seperation: float = 8:
 	set(v):
 		title_seperation = v
-		_update_title_rect_cache()
+		_cache()
 		queue_redraw()
 
 @export_subgroup("Graph")
@@ -72,13 +72,15 @@ enum Location {
 		key_count = new_key_count
 		key_items.resize(key_count)
 		notify_property_list_changed()
-		_update_title_rect_cache()
+		_cache()
 		queue_redraw()
 @export var radius: float = 0.0:
 	set(new_radius):
 		radius = new_radius
-		_update_title_rect_cache()
+		_cache()
 		update_minimum_size()
+		if (size - _get_minimum_size()).length_squared() > 0:
+			size = get_combined_minimum_size()
 		queue_redraw()
 
 @export_storage var key_items: Array[Dictionary] = []:
@@ -104,7 +106,10 @@ enum Location {
 		queue_redraw()
 @export_group("")
 
+var _encompassing_rect: Rect2
 var _title_rect_cache: Array[Rect2] = []
+var _render_shift := Vector2()
+
 
 const Merror = preload("res://src/merror.gd")
 
@@ -144,22 +149,53 @@ func get_item_title(index: int) -> String:
 	return key_items[index].get_or_add("title", "")
 
 
+func _get_shifted_center() -> Vector2:
+	return Vector2(radius, radius)
+
+
+func _get_tooltip(at_position: Vector2) -> String:
+	for rect in _title_rect_cache:
+		if rect.has_point(at_position - _render_shift):
+			return str(rect)
+	return ""
+
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAW:
+		draw_set_transform(_render_shift)
 		_draw_background()
 		_draw_graph()
 		_draw_graph_outline()
 		_draw_guides()
 		_draw_titles()
 
+		# NOTE: Debug to view the title rect cache
+		for rect in _title_rect_cache:
+			draw_rect(rect, Color.WHITE, false, 2)
+
+		draw_rect(_encompassing_rect, Color.HOT_PINK, false, 2)
+
+		draw_circle(_get_shifted_center(), 4, Color.HOT_PINK)
+		print(_render_shift)
+
 
 func _get_minimum_size() -> Vector2:
-	return Vector2(radius, radius) * 2
+	return _encompassing_rect.size
+
+
+func _cache() -> void:
+	_update_title_rect_cache()
+
+	# Get the encompassing rect
+	_encompassing_rect = Rect2()
+	for rect in _title_rect_cache:
+		_encompassing_rect = _encompassing_rect.merge(rect)
+	_render_shift = position - _encompassing_rect.position
 
 
 func _update_title_rect_cache() -> void:
 	_title_rect_cache.clear()
-	var center := size / 2
+	var center := _get_shifted_center()
 
 	for index in range(key_count):
 		# Get the subsitute variables
@@ -253,7 +289,7 @@ func _set(property: StringName, value: Variant) -> bool:
 		match property.get_slice("/", 2):
 			"value":
 				set_item_value(index, value)
-				_update_title_rect_cache()
+				_cache()
 				queue_redraw()
 				return true
 			"use_custom_color":
@@ -267,7 +303,7 @@ func _set(property: StringName, value: Variant) -> bool:
 				return true
 			"title":
 				key_items[index]["title"] = value
-				_update_title_rect_cache()
+				_cache()
 				queue_redraw()
 				return true
 	return false
@@ -319,13 +355,13 @@ func _get_custom_colors() -> PackedColorArray:
 
 
 func _get_polygon_point(index: int) -> Vector2:
-	var center := size / 2
+	var center := _get_shifted_center()
 	var angle := (PI * 2 * index / key_count) - PI * 0.5
 	return center + Vector2(cos(angle), sin(angle)) * radius
 
 
 func _draw_background() -> void:
-	var center := size / 2
+	var center := _get_shifted_center()
 	var points := PackedVector2Array()
 	for i in range(key_count):
 		points.append(_get_polygon_point(i))
@@ -334,7 +370,7 @@ func _draw_background() -> void:
 
 
 func _draw_graph() -> void:
-	var center := size / 2
+	var center := _get_shifted_center()
 	var points := PackedVector2Array()
 
 	for index in key_items.size():
@@ -349,7 +385,7 @@ func _draw_graph_outline() -> void:
 	if graph_outline_width == 0 or graph_outline_color.a == 0:
 		return
 
-	var center := size / 2
+	var center := _get_shifted_center()
 	var points := PackedVector2Array()
 
 	for index in key_items.size():
@@ -366,7 +402,7 @@ func _draw_guides() -> void:
 	if not show_guides or guide_step == 0:
 		return
 	var distance_covered := 0.0
-	var center := size / 2
+	var center := _get_shifted_center()
 
 	while distance_covered <= max_value:
 		var percent := distance_covered / max_value * radius
@@ -385,7 +421,7 @@ func _draw_guides() -> void:
 
 
 func _get_point_as_location(point: Vector2) -> Location:
-	var center := size / 2
+	var center := _get_shifted_center()
 	if point.x < center.x and point.y < center.y:
 		return Location.TOP_LEFT
 	elif point.x == center.x and point.y < center.y:
@@ -406,7 +442,7 @@ func _get_point_as_location(point: Vector2) -> Location:
 
 
 func _draw_titles() -> void:
-	var center := size / 2
+	var center := _get_shifted_center()
 	for index in range(key_count):
 		var subsitutes := {
 			"value": get_item_value(index)
@@ -418,7 +454,3 @@ func _draw_titles() -> void:
 		var font_position := rect.position + Vector2(0, first_line_size.y)
 		draw_multiline_string(
 			font, font_position, title, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size)
-
-	# NOTE: Debug to view the title rect cache
-	for rect in _title_rect_cache:
-		draw_rect(rect, Color.WHITE, false, 2)
