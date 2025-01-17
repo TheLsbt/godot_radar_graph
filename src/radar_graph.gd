@@ -21,6 +21,7 @@ class_name RadarGraph
 
 # TODO: Make the minimum rect also encompas the titles
 
+
 @export_group("Range")
 @export var min_value := 0.0:
 	set(new_min_value):

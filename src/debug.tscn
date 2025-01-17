@@ -32,7 +32,7 @@ key_items = Array[Dictionary]([{
 "title": "Number 2
 ({value})",
 "use_custom_color": false,
-"value": 4.4
+"value": 4.0
 }, {
 "title": "Number 3
 ({value})",
@@ -42,12 +42,12 @@ key_items = Array[Dictionary]([{
 "title": "Number 4
 ({value})",
 "use_custom_color": false,
-"value": 6.305
+"value": 6.0
 }, {
 "title": "Number 5
 ({value})",
 "use_custom_color": false,
-"value": 8.995
+"value": 9.0
 }, {
 "title": "Number 6
 ({value})",
@@ -72,7 +72,7 @@ items/key_0/value = 9.0
 items/key_0/title = "Number 1
 ({value})"
 items/key_0/use_custom_color = false
-items/key_1/value = 4.4
+items/key_1/value = 4.0
 items/key_1/title = "Number 2
 ({value})"
 items/key_1/use_custom_color = false
@@ -80,11 +80,11 @@ items/key_2/value = 10.0
 items/key_2/title = "Number 3
 ({value})"
 items/key_2/use_custom_color = false
-items/key_3/value = 6.305
+items/key_3/value = 6.0
 items/key_3/title = "Number 4
 ({value})"
 items/key_3/use_custom_color = false
-items/key_4/value = 8.995
+items/key_4/value = 9.0
 items/key_4/title = "Number 5
 ({value})"
 items/key_4/use_custom_color = false
