@@ -55,10 +55,12 @@ class_name RadarGraph
 		title_seperation = v
 		queue_redraw()
 
-@export_subgroup("Colors")
+@export_subgroup("Graph")
 @export var background_color: Color
 @export var outline_color: Color
 @export var graph_color: Color
+@export var graph_outline_color: Color
+@export var graph_outline_width := 0.0
 
 @export_group("")
 @export_range(0, 1, 1, "or_greater") var key_count := 0:
@@ -138,6 +140,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAW:
 		_draw_background()
 		_draw_graph()
+		_draw_graph_outline()
 		_draw_guides()
 		_draw_titles()
 
@@ -284,6 +287,23 @@ func _draw_graph() -> void:
 		points.append(center.lerp(target, value / max_value))
 
 	draw_polygon(points, _get_custom_colors())
+
+
+func _draw_graph_outline() -> void:
+	if graph_outline_width == 0 or graph_outline_color.a == 0:
+		return
+
+	var center := size / 2
+	var points := PackedVector2Array()
+
+	for index in key_items.size():
+		var value: float = get(&"items/key_%d/value" % index)
+		var target := _get_polygon_point(index)
+		points.append(center.lerp(target, value / max_value))
+
+	points.append(points[0])
+
+	draw_polyline(points, graph_outline_color)
 
 
 func _draw_guides() -> void:

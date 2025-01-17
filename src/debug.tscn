@@ -20,6 +20,7 @@ rounded = true
 font = ExtResource("3_v0rtb")
 background_color = Color(0.705058, 0.802439, 0.972596, 1)
 graph_color = Color(0.8394, 0.89315, 0.984997, 1)
+graph_outline_color = null
 key_count = 8
 radius = 120.0
 key_items = Array[Dictionary]([{
