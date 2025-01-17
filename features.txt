@@ -1,3 +1,0 @@
-# Customizablility
-# Useful Godot Editor features such as revert
-# Similar script syntax to common Godot nodees eg. get_item(), get_item_value()
