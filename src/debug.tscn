@@ -14,26 +14,68 @@ anchors_preset = 0
 offset_right = 80.0
 offset_bottom = 80.0
 script = ExtResource("2_k8q7i")
-step = null
+max_value = 10.0
+step = 0.2
+rounded = true
 font = ExtResource("3_v0rtb")
 background_color = Color(0.705058, 0.802439, 0.972596, 1)
 graph_color = Color(0.8394, 0.89315, 0.984997, 1)
 key_count = 8
-max_value = 10.0
 radius = 120.0
+key_items = Array[Dictionary]([{
+"title": "Number 1
+({value})",
+"use_custom_color": false,
+"value": 9.0
+}, {
+"title": "Number 2
+({value})",
+"use_custom_color": false,
+"value": 4.4
+}, {
+"title": "Number 3
+({value})",
+"use_custom_color": false,
+"value": 10.0
+}, {
+"title": "Number 4
+({value})",
+"use_custom_color": false,
+"value": 6.305
+}, {
+"title": "Number 5
+({value})",
+"use_custom_color": false,
+"value": 8.995
+}, {
+"title": "Number 6
+({value})",
+"use_custom_color": false,
+"value": 10.0
+}, {
+"title": "Number 7
+({value})",
+"use_custom_color": false,
+"value": 0.0
+}, {
+"title": "Number 8
+({value})",
+"use_custom_color": false,
+"value": 9.0
+}])
 show_guides = true
 guide_color = Color(1, 1, 1, 1)
 guide_step = 2.0
-guide_width = 0.69
-items/key_0/value = 7.865
+guide_width = 0.7
+items/key_0/value = 9.0
 items/key_0/title = "Number 1
 ({value})"
 items/key_0/use_custom_color = false
-items/key_1/value = 4.51
+items/key_1/value = 4.4
 items/key_1/title = "Number 2
 ({value})"
 items/key_1/use_custom_color = false
-items/key_2/value = 8.875
+items/key_2/value = 10.0
 items/key_2/title = "Number 3
 ({value})"
 items/key_2/use_custom_color = false
@@ -62,6 +104,5 @@ items/key_7/use_custom_color = false
 visible = false
 offset_right = 83.0625
 offset_bottom = 31.0
-min_value = 3.11
-max_value = 3.11
-value = 3.11
+step = 0.2
+value = 10.0

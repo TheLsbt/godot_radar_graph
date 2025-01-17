@@ -5,10 +5,43 @@ class_name RadarGraph
 ## A simple radar graph plugin that is animateable. Note, that using [Theme]'s is not possible due
 ## to a Godot Limitation.
 
-@export_group("Radar Graph Range")
-@export var step: float = 0.0
+# TODO: When min_value, max_value, rounded or step is changed it updates all the existing values to
+# match them
+
+# TODO: Draw the outline for the background
+
+# TODO: Draw the outline for the graph
+
+# TODO: Add a layer adjustment system, an array of String's that can be reorganised to adjust the
+# way the graph is rendered
+
+# TODO: Cache the rects of each title
+
+# TODO: Tooltips for the titles
+
+# TODO: Make the minimum rect also encompas the titles
+
+@export_group("Range")
+@export var min_value := 0.0:
+	set(new_min_value):
+		min_value = new_min_value
+		if min_value > max_value:
+			max_value = min_value
+@export var max_value := 100.0:
+	set(new_max_value):
+		max_value = new_max_value
+		if min_value > max_value:
+			min_value = max_value
+@export var step: float = 0.0:
+	set(new_step):
+		step = snappedf(new_step, 0.02)
+@export var rounded: bool = false:
+	set(new_rounded):
+		rounded = new_rounded
+		queue_redraw()
 
 @export_group("Styling")
+@export_subgroup("Font")
 @export var font: Font:
 	set(v):
 		font = v
@@ -22,7 +55,7 @@ class_name RadarGraph
 		title_seperation = v
 		queue_redraw()
 
-@export_group("Colors")
+@export_subgroup("Colors")
 @export var background_color: Color
 @export var outline_color: Color
 @export var graph_color: Color
@@ -34,26 +67,15 @@ class_name RadarGraph
 		key_items.resize(key_count)
 		notify_property_list_changed()
 		queue_redraw()
-
-var key_items: Array[Dictionary] = []:
-	set(new_key_items):
-		key_items = new_key_items
-
-@export var min_value := 0.0:
-	set(new_min_value):
-		min_value = new_min_value
-		if min_value > max_value:
-			max_value = min_value
-@export var max_value := 100.0:
-	set(new_max_value):
-		max_value = new_max_value
-		if min_value > max_value:
-			min_value = max_value
 @export var radius: float = 0.0:
 	set(new_radius):
 		radius = new_radius
 		update_minimum_size()
 		queue_redraw()
+
+@export_storage var key_items: Array[Dictionary] = []:
+	set(new_key_items):
+		key_items = new_key_items
 
 @export_group("Guide")
 @export var show_guides := false:
@@ -88,7 +110,10 @@ func get_item(index: int) -> Dictionary:
 func set_item_value(index: int, value: float) -> void:
 	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
 		return
-	key_items[index]["value"] = clampf(value, min_value, max_value)
+	if rounded:
+		key_items[index]["value"] = clampf(roundf(snappedf(value, step)), min_value, max_value)
+	else:
+		key_items[index]["value"] = clampf(snappedf(value, step), min_value, max_value)
 
 
 func get_item_value(index: int) -> float:
@@ -170,7 +195,7 @@ func _set(property: StringName, value: Variant) -> bool:
 
 		match property.get_slice("/", 2):
 			"value":
-				key_items[index]["value"] = clampf(value, min_value, max_value)
+				set_item_value(index, value)
 				queue_redraw()
 				return true
 			"use_custom_color":
@@ -318,7 +343,7 @@ func _draw_titles() -> void:
 	for index in range(key_count):
 		var pos := _get_polygon_point(index)
 
-		var value := get_item_value(index)
+		var value := snappedf(get_item_value(index), step)
 		var title := get_item_title(index).format({"value": value})
 		var title_and_value := title
 
