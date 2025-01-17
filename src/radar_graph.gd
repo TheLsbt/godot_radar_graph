@@ -13,12 +13,16 @@ class_name RadarGraph
 # TODO: Add a layer adjustment system, an array of String's that can be reorganised to adjust the
 # way the graph is rendered
 
-# TODO: Cache the rects of each title
-
 # TODO: Tooltips for the titles
 
 # TODO: Make the minimum rect also encompas the titles
 
+enum Location {
+	UNKNOWN,
+	TOP_LEFT, TOP_CENTER, TOP_RIGHT,
+	CENTER_LEFT, CENTER_RIGHT,
+	BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT
+	}
 
 @export_group("Range")
 @export var min_value := 0.0:
@@ -52,6 +56,7 @@ class_name RadarGraph
 @export var title_seperation: float = 8:
 	set(v):
 		title_seperation = v
+		_update_title_rect_cache()
 		queue_redraw()
 
 @export_subgroup("Graph")
@@ -67,10 +72,12 @@ class_name RadarGraph
 		key_count = new_key_count
 		key_items.resize(key_count)
 		notify_property_list_changed()
+		_update_title_rect_cache()
 		queue_redraw()
 @export var radius: float = 0.0:
 	set(new_radius):
 		radius = new_radius
+		_update_title_rect_cache()
 		update_minimum_size()
 		queue_redraw()
 
@@ -96,6 +103,8 @@ class_name RadarGraph
 		guide_width = value
 		queue_redraw()
 @export_group("")
+
+var _title_rect_cache: Array[Rect2] = []
 
 const Merror = preload("res://src/merror.gd")
 
@@ -148,6 +157,52 @@ func _get_minimum_size() -> Vector2:
 	return Vector2(radius, radius) * 2
 
 
+func _update_title_rect_cache() -> void:
+	_title_rect_cache.clear()
+	var center := size / 2
+
+	for index in range(key_count):
+		# Get the subsitute variables
+		var subsitutes := {
+			"value": get_item_value(index)
+		}
+		var title: String = get_item_title(index).format(subsitutes, "{_}")
+		var title_size := font.get_multiline_string_size(title, 0, -1, font_size)
+		var first_line_size := font.get_string_size(
+			title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_CENTER, title_size.x, font_size)
+
+		var point_pos := _get_polygon_point(index)
+		var direction := center.direction_to(point_pos)
+
+		var font_pos := point_pos + Vector2(title_seperation, title_seperation) * direction
+
+		var font_offset := Vector2.ZERO
+
+		var location := _get_point_as_location(point_pos)
+		match location:
+			Location.TOP_LEFT:
+				font_offset = Vector2(-title_size.x, -first_line_size.y)
+			Location.TOP_CENTER:
+				font_offset = Vector2(-title_size.x / 2, -first_line_size.y)
+			Location.TOP_RIGHT:
+				font_offset = Vector2(0, -first_line_size.y)
+			Location.CENTER_LEFT:
+				font_offset = Vector2(-title_size.x, (-title_size.y * 0.5) + first_line_size.y)
+			Location.CENTER_RIGHT:
+				font_offset = Vector2(0, (-title_size.y * 0.5) + first_line_size.y)
+			Location.BOTTOM_LEFT:
+				font_offset = Vector2(-title_size.x, first_line_size.y)
+			Location.BOTTOM_CENTER:
+				font_offset = Vector2(-title_size.x / 2, first_line_size.y)
+			Location.BOTTOM_RIGHT:
+				font_offset = Vector2(0, first_line_size.y)
+
+		_title_rect_cache.append(
+			Rect2(font_pos + font_offset - Vector2(0, first_line_size.y), title_size))
+
+
+
+
 func _get_property_list() -> Array[Dictionary]:
 	var properties: Array[Dictionary] = []
 
@@ -198,6 +253,7 @@ func _set(property: StringName, value: Variant) -> bool:
 		match property.get_slice("/", 2):
 			"value":
 				set_item_value(index, value)
+				_update_title_rect_cache()
 				queue_redraw()
 				return true
 			"use_custom_color":
@@ -210,8 +266,9 @@ func _set(property: StringName, value: Variant) -> bool:
 				queue_redraw()
 				return true
 			"title":
-				queue_redraw()
 				key_items[index]["title"] = value
+				_update_title_rect_cache()
+				queue_redraw()
 				return true
 	return false
 
@@ -327,17 +384,8 @@ func _draw_guides() -> void:
 		distance_covered += guide_step
 
 
-enum Location {
-	UNKNOWN,
-	TOP_LEFT, TOP_CENTER, TOP_RIGHT,
-	CENTER_LEFT, CENTER_RIGHT,
-	BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT
-	}
-
-
 func _get_point_as_location(point: Vector2) -> Location:
 	var center := size / 2
-
 	if point.x < center.x and point.y < center.y:
 		return Location.TOP_LEFT
 	elif point.x == center.x and point.y < center.y:
@@ -396,7 +444,10 @@ func _draw_titles() -> void:
 				font_offset = Vector2(0, line_height)
 
 
-		#draw_circle(font_pos, 4, Color.RED)
+		draw_circle(font_pos, 4, Color.RED)
 		#draw_rect(Rect2(font_pos + font_offset - Vector2(0, line_height), title_size), Color.WHITE, false, 2)
 
 		draw_multiline_string(font, font_pos + font_offset, title_and_value, HORIZONTAL_ALIGNMENT_CENTER, title_size.x, font_size)
+
+	for rect in _title_rect_cache:
+		draw_rect(rect, Color.WHITE, false, 2)
