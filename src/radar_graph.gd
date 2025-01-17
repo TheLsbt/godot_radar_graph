@@ -15,8 +15,6 @@ class_name RadarGraph
 
 # TODO: Tooltips for the titles
 
-# TODO: Make the minimum rect also encompas the titles
-
 enum Location {
 	UNKNOWN,
 	TOP_LEFT, TOP_CENTER, TOP_RIGHT,
@@ -48,10 +46,12 @@ enum Location {
 @export var font: Font:
 	set(v):
 		font = v
+		_cache()
 		queue_redraw()
 @export var font_size: int = 16:
 	set(v):
 		font_size = v
+		_cache()
 		queue_redraw()
 @export var title_seperation: float = 8:
 	set(v):
@@ -78,7 +78,6 @@ enum Location {
 	set(new_radius):
 		radius = new_radius
 		_cache()
-		update_minimum_size()
 		if (size - _get_minimum_size()).length_squared() > 0:
 			size = get_combined_minimum_size()
 		queue_redraw()
@@ -176,7 +175,6 @@ func _notification(what: int) -> void:
 		draw_rect(_encompassing_rect, Color.HOT_PINK, false, 2)
 
 		draw_circle(_get_shifted_center(), 4, Color.HOT_PINK)
-		print(_render_shift)
 
 
 func _get_minimum_size() -> Vector2:
@@ -191,6 +189,8 @@ func _cache() -> void:
 	for rect in _title_rect_cache:
 		_encompassing_rect = _encompassing_rect.merge(rect)
 	_render_shift = position - _encompassing_rect.position
+
+	update_minimum_size()
 
 
 func _update_title_rect_cache() -> void:
