@@ -13,7 +13,9 @@ class_name RadarGraph
 # TODO: Add a layer adjustment system, an array of String's that can be reorganised to adjust the
 # way the graph is rendered
 
-# TODO: Tooltips for the titles
+# TODO: Godot Docs
+
+# TODO: Github Guide
 
 enum Location {
 	UNKNOWN,
@@ -148,14 +150,33 @@ func get_item_title(index: int) -> String:
 	return key_items[index].get_or_add("title", "")
 
 
+func set_item_tooltip(index: int, item_tooltip: String) -> void:
+	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+		return
+	key_items[index]["tooltip"] = item_tooltip
+
+
+func get_item_tooltip(index: int) -> String:
+	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+		return ""
+	return key_items[index].get_or_add("tooltip", "")
+
+
+
+
 func _get_shifted_center() -> Vector2:
 	return Vector2(radius, radius)
 
 
+func _init() -> void:
+	_cache()
+
+
 func _get_tooltip(at_position: Vector2) -> String:
-	for rect in _title_rect_cache:
+	for index in range(key_count):
+		var rect := _title_rect_cache[index]
 		if rect.has_point(at_position - _render_shift):
-			return str(rect)
+			return get_item_tooltip(index)
 	return ""
 
 
@@ -252,7 +273,11 @@ func _get_property_list() -> Array[Dictionary]:
 			"type": TYPE_STRING,
 			"hint": PROPERTY_HINT_MULTILINE_TEXT,
 		})
-
+		properties.append({
+			"name": "items/key_%d/tooltip" % i,
+			"type": TYPE_STRING,
+			"hint": PROPERTY_HINT_MULTILINE_TEXT,
+		})
 		properties.append({
 			"name": "items/key_%d/use_custom_color" % i,
 			"type": TYPE_BOOL,
@@ -279,6 +304,8 @@ func _get(property: StringName) -> Variant:
 				return key_items[index].get_or_add("custom_color", Color.BLACK)
 			"title":
 				return key_items[index].get_or_add("title", "")
+			"tooltip":
+				return key_items[index].get_or_add("tooltip", "")
 	return
 
 
@@ -306,6 +333,9 @@ func _set(property: StringName, value: Variant) -> bool:
 				_cache()
 				queue_redraw()
 				return true
+			"tooltip":
+				key_items[index]["tooltip"] = value
+				return true
 	return false
 
 
@@ -321,7 +351,8 @@ func _property_can_revert(property: StringName) -> bool:
 			return true
 		elif property == &"items/key_%d/custom_color" % index and get(property) != Color.BLACK:
 			return true
-
+		elif property == &"items/key_%d/tooltip" % index and get(property).length() > 0:
+			return true
 	return false
 
 
@@ -337,6 +368,8 @@ func _property_get_revert(property: StringName) -> Variant:
 			return false
 		elif property == &"items/key_%d/custom_color" % index:
 			return Color.BLACK
+		elif property == &"items/key_%d/tooltip" % index:
+			return ""
 
 	return false
 
