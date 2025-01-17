@@ -10,8 +10,6 @@ class_name RadarGraph
 
 # TODO: Draw the outline for the background
 
-# TODO: Draw the outline for the graph
-
 # TODO: Add a layer adjustment system, an array of String's that can be reorganised to adjust the
 # way the graph is rendered
 
