@@ -408,46 +408,17 @@ func _get_point_as_location(point: Vector2) -> Location:
 func _draw_titles() -> void:
 	var center := size / 2
 	for index in range(key_count):
-		var pos := _get_polygon_point(index)
+		var subsitutes := {
+			"value": get_item_value(index)
+		}
+		var title := get_item_title(index).format(subsitutes)
+		var rect := _title_rect_cache[index]
+		var first_line_size := font.get_string_size(
+			title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size)
+		var font_position := rect.position + Vector2(0, first_line_size.y)
+		draw_multiline_string(
+			font, font_position, title, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size)
 
-		var value := snappedf(get_item_value(index), step)
-		var title := get_item_title(index).format({"value": value})
-		var title_and_value := title
-
-		var title_size := font.get_multiline_string_size(title_and_value, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
-
-		var dir := center.direction_to(pos)
-		# This position is a little bit outside of the background
-		var font_pos := pos + Vector2(title_seperation, title_seperation) * dir
-		var font_offset := Vector2.ZERO
-
-		var title_rect := Rect2()
-		var line_height = font.get_string_size(title_and_value.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_CENTER, title_size.x, font_size).y
-
-		var location := _get_point_as_location(pos)
-		match location:
-			Location.TOP_LEFT:
-				font_offset = Vector2(-title_size.x, -line_height)
-			Location.TOP_CENTER:
-				font_offset = Vector2(-title_size.x / 2, -line_height)
-			Location.TOP_RIGHT:
-				font_offset = Vector2(0, -line_height)
-			Location.CENTER_LEFT:
-				font_offset = Vector2(-title_size.x, (-title_size.y * 0.5) + line_height)
-			Location.CENTER_RIGHT:
-				font_offset = Vector2(0, (-title_size.y * 0.5) + line_height)
-			Location.BOTTOM_LEFT:
-				font_offset = Vector2(-title_size.x, line_height)
-			Location.BOTTOM_CENTER:
-				font_offset = Vector2(-title_size.x / 2, line_height)
-			Location.BOTTOM_RIGHT:
-				font_offset = Vector2(0, line_height)
-
-
-		draw_circle(font_pos, 4, Color.RED)
-		#draw_rect(Rect2(font_pos + font_offset - Vector2(0, line_height), title_size), Color.WHITE, false, 2)
-
-		draw_multiline_string(font, font_pos + font_offset, title_and_value, HORIZONTAL_ALIGNMENT_CENTER, title_size.x, font_size)
-
+	# NOTE: Debug to view the title rect cache
 	for rect in _title_rect_cache:
 		draw_rect(rect, Color.WHITE, false, 2)
