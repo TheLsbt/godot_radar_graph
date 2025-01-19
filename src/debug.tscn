@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://src/debug.gd" id="1_a3brh"]
 [ext_resource type="Script" path="res://src/radar_graph.gd" id="2_k8q7i"]
-[ext_resource type="FontFile" uid="uid://cgkquiaolun8f" path="res://Monofett-Regular.ttf" id="3_qa33r"]
+[ext_resource type="FontFile" uid="uid://botqsldqnqjxn" path="res://RobotoMono-VariableFont_wght.ttf" id="3_kfrwk"]
 
 [node name="Debug" type="Node2D"]
 position = Vector2(161, 132)
@@ -11,27 +11,17 @@ script = ExtResource("1_a3brh")
 [node name="RadarGraph" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
-offset_right = 438.6
-offset_bottom = 295.6
+offset_right = 481.98
+offset_bottom = 338.98
 script = ExtResource("2_k8q7i")
-max_value = 10.0
-step = 0.2
-rounded = true
-font = ExtResource("3_qa33r")
-font_size = 32
-title_seperation = 20.0
-background_color = Color(0.705058, 0.802439, 0.972596, 1)
-graph_color = Color(0.8394, 0.89315, 0.984997, 1)
-graph_outline_color = Color(0.47168, 0.610492, 0.838542, 1)
-graph_outline_width = 1.0
 key_count = 8
-radius = 91.79
+radius = 120.0
 key_items = Array[Dictionary]([{
 "title": "Number 1
 ({value})",
 "tooltip": "tooltip 1",
 "use_custom_color": false,
-"value": 9.0
+"value": 8.4
 }, {
 "title": "Number 2
 ({value})",
@@ -75,50 +65,52 @@ key_items = Array[Dictionary]([{
 "use_custom_color": false,
 "value": 9.0
 }])
+max_value = 10.0
+step = 0.2
+font = ExtResource("3_kfrwk")
+title_seperation = 5.49
+background_color = Color(0.705058, 0.802439, 0.972596, 1)
+background_outline_width = 3.2
+graph_color = Color(0.8394, 0.89315, 0.984997, 1)
+graph_outline_color = Color(0.47168, 0.610492, 0.838542, 1)
+graph_outline_width = 0.8
 show_guides = true
 guide_color = Color(1, 1, 1, 1)
-guide_step = 2.0
 guide_width = 0.7
-items/key_0/value = 9.0
+guide_step = 2.0
+draw_order = PackedStringArray("background", "guides", "graph", "graph_outline", "titles", "background_outline")
+items/key_0/value = 8.4
 items/key_0/title = "Number 1
 ({value})"
 items/key_0/tooltip = "tooltip 1"
-items/key_0/use_custom_color = false
 items/key_1/value = 4.0
 items/key_1/title = "Number 2
 ({value})"
 items/key_1/tooltip = ""
-items/key_1/use_custom_color = false
 items/key_2/value = 10.0
 items/key_2/title = "Number 3
 ({value})"
 items/key_2/tooltip = ""
-items/key_2/use_custom_color = false
 items/key_3/value = 6.0
 items/key_3/title = "Number 4
 ({value})"
 items/key_3/tooltip = ""
-items/key_3/use_custom_color = false
 items/key_4/value = 9.0
 items/key_4/title = "Number 5
 ({value})"
 items/key_4/tooltip = ""
-items/key_4/use_custom_color = false
 items/key_5/value = 10.0
 items/key_5/title = "Number 6
 ({value})"
 items/key_5/tooltip = ""
-items/key_5/use_custom_color = false
 items/key_6/value = 0.0
 items/key_6/title = "This is Number 7
 ({value})"
 items/key_6/tooltip = ""
-items/key_6/use_custom_color = false
 items/key_7/value = 9.0
 items/key_7/title = "Number 8
 ({value})"
 items/key_7/tooltip = ""
-items/key_7/use_custom_color = false
 
 [node name="SpinBox" type="SpinBox" parent="."]
 visible = false

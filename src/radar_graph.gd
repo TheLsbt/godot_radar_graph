@@ -17,99 +17,155 @@ class_name RadarGraph
 
 # TODO: Github Guide
 
-enum Location {
-	UNKNOWN,
-	TOP_LEFT, TOP_CENTER, TOP_RIGHT,
-	CENTER_LEFT, CENTER_RIGHT,
-	BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT
-	}
+enum TitleLocation { TOP_LEFT, TOP_CENTER, TOP_RIGHT, CENTER_LEFT, CENTER_RIGHT,
+	BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT, UNKNOWN }
 
-@export_group("Range")
-@export var min_value := 0.0:
-	set(new_min_value):
-		min_value = new_min_value
-		if min_value > max_value:
-			max_value = min_value
-@export var max_value := 100.0:
-	set(new_max_value):
-		max_value = new_max_value
-		if min_value > max_value:
-			min_value = max_value
-@export var step: float = 0.0:
-	set(new_step):
-		step = snappedf(new_step, 0.02)
-@export var rounded: bool = false:
-	set(new_rounded):
-		rounded = new_rounded
-		queue_redraw()
+const CleanDrawOrder: PackedStringArray = [
+	"background", "background_outline", "graph", "graph_outline", "guides", "titles"
+]
 
-@export_group("Styling")
-@export_subgroup("Font")
-@export var font: Font:
-	set(v):
-		font = v
-		_cache()
-		queue_redraw()
-@export var font_size: int = 16:
-	set(v):
-		font_size = v
-		_cache()
-		queue_redraw()
-@export var title_seperation: float = 8:
-	set(v):
-		title_seperation = v
-		_cache()
-		queue_redraw()
-
-@export_subgroup("Graph")
-@export var background_color: Color
-@export var outline_color: Color
-@export var graph_color: Color
-@export var graph_outline_color: Color
-@export var graph_outline_width := 0.0
-
-@export_group("")
-@export_range(0, 1, 1, "or_greater") var key_count := 0:
-	set(new_key_count):
-		key_count = new_key_count
+## The abount of keys that will be displayed, also determines ammount of sides the graph will have.
+## [br]A graph can not have less than 3 keys.
+@export_range(3, 100, 1, "or_greater") var key_count := 3:
+	set(value):
+		key_count = value
 		key_items.resize(key_count)
 		notify_property_list_changed()
 		_cache()
 		queue_redraw()
-@export var radius: float = 0.0:
-	set(new_radius):
-		radius = new_radius
+## The radius of the graph
+@export var radius := 0.0:
+	set(value):
+		radius = value
 		_cache()
-		if (size - _get_minimum_size()).length_squared() > 0:
-			size = get_combined_minimum_size()
 		queue_redraw()
-
+## All information for the key items are stored here, use the [param set_item_] functions.
 @export_storage var key_items: Array[Dictionary] = []:
 	set(new_key_items):
 		key_items = new_key_items
 
-@export_group("Guide")
+@export_group("Range")
+# TODO: When min value or max value is changed also update item values (after a bit to stop editor lag)
+## Minimum value. Range is clamped if an items value is less than [member min_value].
+@export var min_value := 0.0:
+	set(value):
+		min_value = value
+		if min_value > max_value:
+			max_value = min_value
+		queue_redraw()
+## Maximum value. Range is clamped if an items value is greater than [member max_value].
+@export var max_value := 100.0:
+	set(value):
+		max_value = value
+		if max_value < min_value:
+			min_value = max_value
+		queue_redraw()
+# TODO: When step is changed update all the item values  (after a bit to stop editor lag)
+## If greater than 0, item_value will always be rounded to a multiple of this property's value.
+## If [member rounded] is also [code]true[/code], value will first be rounded to a multiple of
+## this property's value, then rounded to the nearest integer.
+@export var step: float = 0.0:
+	set(value):
+		step = snappedf(value, 0.02)
+		queue_redraw()
+# TODO: When rounded is changed update all the item values  (after a bit to stop editor lag)
+## If [code]true[/code], value will always be rounded to the nearest integer.
+@export var rounded: bool = false:
+	set(value):
+		rounded = value
+		queue_redraw()
+
+@export_group("Display")
+@export_subgroup("Font")
+## The font that is displayed for each title.
+@export var font: Font:
+	set(value):
+		font = value
+		_cache()
+		queue_redraw()
+## The font size of each title.
+@export var font_size: int = 16:
+	set(value):
+		font_size = value
+		_cache()
+		queue_redraw()
+## Scales the distance from the center of the graph, can be negative to decrese the distance.
+@export var title_seperation: float = 8:
+	set(value):
+		title_seperation = value
+		_cache()
+		queue_redraw()
+
+@export_subgroup("Graph")
+## The color of the background (the full polygon).
+@export var background_color: Color:
+	set(value):
+		background_color = value
+		queue_redraw()
+## The color of the outline that surrounds the background. See [member background_color] for more.
+@export var background_outline_color: Color:
+	set(value):
+		background_outline_color = value
+		queue_redraw()
+## The width of the outline that surrounds the background. See [member background_outline_color]
+## for more.
+@export var background_outline_width := 0.0:
+	set(value):
+		background_outline_width = value
+		queue_redraw()
+## The color of the graph (the polygon that indicates the value of each item).
+@export var graph_color: Color:
+	set(value):
+		graph_color = value
+		queue_redraw()
+## The color of the outline that surrounds the graph. See [member graph_color] for more.
+@export var graph_outline_color: Color:
+	set(value):
+		graph_outline_color = value
+		queue_redraw()
+## The width of the outline that surrounds the graph. See [member graph_outline_color] for more.
+@export var graph_outline_width := 0.0:
+	set(value):
+		graph_outline_width = value
+		queue_redraw()
+
+@export_subgroup("Guide")
+## Determines the visibility of the guides. See [member guide_step] for more.
 @export var show_guides := false:
 	set(value):
 		show_guides = value
 		queue_redraw()
-@export var guide_color: Color
-## If [member show_guides] is true and [member guide_step] if greater than 0, shows the guide step
-## every [member guide_step] units. Use [member guide_color] to customize the guide.
-@export var guide_step := 0.0:
+## The color of the guides.
+@export var guide_color: Color:
 	set(value):
-		guide_step = value
+		guide_color = value
 		queue_redraw()
-
+## The width of the guides.
 @export var guide_width := 1.0:
 	set(value):
 		guide_width = value
 		queue_redraw()
-@export_group("")
+## If [member show_guides] is true and [member guide_step] if [code]greater[/code] than 0,
+## shows the guide step every [member guide_step] units. Use [member guide_color] to
+## customize the guide.
+@export_range(0, 100, 1, "or_greater") var guide_step := 0.0:
+	set(value):
+		guide_step = value
+		queue_redraw()
+
+@export_group("Display")
+## The draw order of the graph.
+@export var draw_order: PackedStringArray = CleanDrawOrder:
+	set(value):
+		draw_order = value
+		queue_redraw()
 
 var _encompassing_rect: Rect2
 var _title_rect_cache: Array[Rect2] = []
-var _render_shift := Vector2()
+var encompassing_offset := Vector2()
+var radius_v2: Vector2:
+	get:
+		return Vector2(radius, radius)
 
 
 const Merror = preload("res://src/merror.gd")
@@ -130,6 +186,8 @@ func set_item_value(index: int, value: float) -> void:
 		key_items[index]["value"] = clampf(roundf(snappedf(value, step)), min_value, max_value)
 	else:
 		key_items[index]["value"] = clampf(snappedf(value, step), min_value, max_value)
+	_cache()
+	queue_redraw()
 
 
 func get_item_value(index: int) -> float:
@@ -142,6 +200,8 @@ func set_item_title(index: int, title: String) -> void:
 	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
 		return
 	key_items[index]["title"] = title
+	_cache()
+	queue_redraw()
 
 
 func get_item_title(index: int) -> String:
@@ -162,12 +222,6 @@ func get_item_tooltip(index: int) -> String:
 	return key_items[index].get_or_add("tooltip", "")
 
 
-
-
-func _get_shifted_center() -> Vector2:
-	return Vector2(radius, radius)
-
-
 func _init() -> void:
 	_cache()
 
@@ -175,19 +229,20 @@ func _init() -> void:
 func _get_tooltip(at_position: Vector2) -> String:
 	for index in range(key_count):
 		var rect := _title_rect_cache[index]
-		if rect.has_point(at_position - _render_shift):
+		if rect.has_point(at_position - encompassing_offset):
 			return get_item_tooltip(index)
 	return ""
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAW:
-		draw_set_transform(_render_shift)
-		_draw_background()
-		_draw_graph()
-		_draw_graph_outline()
-		_draw_guides()
-		_draw_titles()
+		draw_set_transform(encompassing_offset)
+		for i in draw_order:
+			var method := &"_draw_%s" % i
+			if not has_method(method):
+				printerr("No draw method found for ", i)
+				continue
+			call(method)
 
 		# NOTE: Debug to view the title rect cache
 		for rect in _title_rect_cache:
@@ -195,7 +250,7 @@ func _notification(what: int) -> void:
 
 		draw_rect(_encompassing_rect, Color.HOT_PINK, false, 2)
 
-		draw_circle(_get_shifted_center(), 4, Color.HOT_PINK)
+		draw_circle(radius_v2 + encompassing_offset, 4, Color.HOT_PINK)
 
 
 func _get_minimum_size() -> Vector2:
@@ -209,14 +264,20 @@ func _cache() -> void:
 	_encompassing_rect = Rect2()
 	for rect in _title_rect_cache:
 		_encompassing_rect = _encompassing_rect.merge(rect)
-	_render_shift = position - _encompassing_rect.position
 
+	_update_size()
+	encompassing_offset = position - _encompassing_rect.position
+
+
+func _update_size() -> void:
 	update_minimum_size()
+
+	if (size - get_combined_minimum_size()).length_squared() > 0:
+		size = get_combined_minimum_size()
 
 
 func _update_title_rect_cache() -> void:
 	_title_rect_cache.clear()
-	var center := _get_shifted_center()
 
 	for index in range(key_count):
 		# Get the subsitute variables
@@ -229,7 +290,7 @@ func _update_title_rect_cache() -> void:
 			title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_CENTER, title_size.x, font_size)
 
 		var point_pos := _get_polygon_point(index)
-		var direction := center.direction_to(point_pos)
+		var direction := radius_v2.direction_to(point_pos)
 
 		var font_pos := point_pos + Vector2(title_seperation, title_seperation) * direction
 
@@ -237,27 +298,25 @@ func _update_title_rect_cache() -> void:
 
 		var location := _get_point_as_location(point_pos)
 		match location:
-			Location.TOP_LEFT:
+			TitleLocation.TOP_LEFT:
 				font_offset = Vector2(-title_size.x, -first_line_size.y)
-			Location.TOP_CENTER:
+			TitleLocation.TOP_CENTER:
 				font_offset = Vector2(-title_size.x / 2, -first_line_size.y)
-			Location.TOP_RIGHT:
+			TitleLocation.TOP_RIGHT:
 				font_offset = Vector2(0, -first_line_size.y)
-			Location.CENTER_LEFT:
+			TitleLocation.CENTER_LEFT:
 				font_offset = Vector2(-title_size.x, (-title_size.y * 0.5) + first_line_size.y)
-			Location.CENTER_RIGHT:
+			TitleLocation.CENTER_RIGHT:
 				font_offset = Vector2(0, (-title_size.y * 0.5) + first_line_size.y)
-			Location.BOTTOM_LEFT:
+			TitleLocation.BOTTOM_LEFT:
 				font_offset = Vector2(-title_size.x, first_line_size.y)
-			Location.BOTTOM_CENTER:
+			TitleLocation.BOTTOM_CENTER:
 				font_offset = Vector2(-title_size.x / 2, first_line_size.y)
-			Location.BOTTOM_RIGHT:
+			TitleLocation.BOTTOM_RIGHT:
 				font_offset = Vector2(0, first_line_size.y)
 
 		_title_rect_cache.append(
 			Rect2(font_pos + font_offset - Vector2(0, first_line_size.y), title_size))
-
-
 
 
 func _get_property_list() -> Array[Dictionary]:
@@ -278,15 +337,6 @@ func _get_property_list() -> Array[Dictionary]:
 			"type": TYPE_STRING,
 			"hint": PROPERTY_HINT_MULTILINE_TEXT,
 		})
-		properties.append({
-			"name": "items/key_%d/use_custom_color" % i,
-			"type": TYPE_BOOL,
-		})
-		if key_items[i].get("use_custom_color", false):
-			properties.append({
-				"name": "items/key_%d/custom_color" % i,
-				"type": TYPE_COLOR,
-			})
 
 	return properties
 
@@ -297,15 +347,11 @@ func _get(property: StringName) -> Variant:
 
 		match property.get_slice("/", 2):
 			"value":
-				return key_items[index].get_or_add("value", min_value)
-			"use_custom_color":
-				return key_items[index].get_or_add("use_custom_color", false)
-			"custom_color":
-				return key_items[index].get_or_add("custom_color", Color.BLACK)
+				return get_item_value(index)
 			"title":
-				return key_items[index].get_or_add("title", "")
+				return get_item_title(index)
 			"tooltip":
-				return key_items[index].get_or_add("tooltip", "")
+				return get_item_tooltip(index)
 	return
 
 
@@ -316,25 +362,12 @@ func _set(property: StringName, value: Variant) -> bool:
 		match property.get_slice("/", 2):
 			"value":
 				set_item_value(index, value)
-				_cache()
-				queue_redraw()
-				return true
-			"use_custom_color":
-				key_items[index]["use_custom_color"] = value
-				notify_property_list_changed()
-				queue_redraw()
-				return true
-			"custom_color":
-				key_items[index]["custom_color"] = value
-				queue_redraw()
 				return true
 			"title":
-				key_items[index]["title"] = value
-				_cache()
-				queue_redraw()
+				set_item_title(index, value)
 				return true
 			"tooltip":
-				key_items[index]["tooltip"] = value
+				set_item_tooltip(index, value)
 				return true
 	return false
 
@@ -343,15 +376,12 @@ func _property_can_revert(property: StringName) -> bool:
 	if property.begins_with("items/key_"):
 		var index := property.get_slice("_", 1).to_int()
 
-		if property == &"items/key_%d/value" % index and get(property) != 0:
+		var key := property.get_slice("/", 2)
+		if key == "value" and get(property) != 0:
 			return true
-		elif property == &"items/key_%d/title" % index and get(property).length() > 0:
+		elif key == "title" and get(property).length() > 0:
 			return true
-		elif property == &"items/key_%d/use_custom_color" % index and get(property):
-			return true
-		elif property == &"items/key_%d/custom_color" % index and get(property) != Color.BLACK:
-			return true
-		elif property == &"items/key_%d/tooltip" % index and get(property).length() > 0:
+		elif key == "tooltip" and get(property):
 			return true
 	return false
 
@@ -360,41 +390,24 @@ func _property_get_revert(property: StringName) -> Variant:
 	if property.begins_with("items/key_"):
 		var index := property.get_slice("_", 1).to_int()
 
-		if property == &"items/key_%d/value" % index:
-			return 0
-		elif property == &"items/key_%d/title" % index:
-			return ""
-		elif property == &"items/key_%d/use_custom_color" % index:
-			return false
-		elif property == &"items/key_%d/custom_color" % index:
-			return Color.BLACK
-		elif property == &"items/key_%d/tooltip" % index:
-			return ""
-
+		var key := property.get_slice("/", 2)
+		match key:
+			"value":
+				return 0
+			"title":
+				return ""
+			"tooltip":
+				return ""
 	return false
 
 
-func _get_custom_colors() -> PackedColorArray:
-	var colors := PackedColorArray()
-	for index in range(key_count):
-		if get(&"items/key_%d/use_custom_color" % index):
-			colors.append(get(&"items/key_%d/custom_color" % index))
-		else:
-			colors.append(graph_color)
-	return colors
-
-
-# Drawing
-
 
 func _get_polygon_point(index: int) -> Vector2:
-	var center := _get_shifted_center()
 	var angle := (PI * 2 * index / key_count) - PI * 0.5
-	return center + Vector2(cos(angle), sin(angle)) * radius
+	return radius_v2 + Vector2(cos(angle), sin(angle)) * radius_v2
 
 
 func _draw_background() -> void:
-	var center := _get_shifted_center()
 	var points := PackedVector2Array()
 	for i in range(key_count):
 		points.append(_get_polygon_point(i))
@@ -402,47 +415,58 @@ func _draw_background() -> void:
 	draw_polygon(points, [background_color])
 
 
-func _draw_graph() -> void:
-	var center := _get_shifted_center()
+func _draw_background_outline() -> void:
+	if background_outline_width == 0 or background_outline_color.a == 0:
+		return
+
 	var points := PackedVector2Array()
 
 	for index in key_items.size():
-		var value: float = get(&"items/key_%d/value" % index)
-		var target := _get_polygon_point(index)
-		points.append(center.lerp(target, value / max_value))
+		points.append(_get_polygon_point(index))
 
-	draw_polygon(points, _get_custom_colors())
+	points.append(points[0])
+
+	draw_polyline(points, background_outline_color, background_outline_width)
+
+
+func _draw_graph() -> void:
+	var points := PackedVector2Array()
+
+	for index in key_items.size():
+		var value: float = get_item_value(index)
+		var target := _get_polygon_point(index)
+		points.append(radius_v2.lerp(target, value / max_value))
+
+	draw_polygon(points, [graph_color])
 
 
 func _draw_graph_outline() -> void:
 	if graph_outline_width == 0 or graph_outline_color.a == 0:
 		return
 
-	var center := _get_shifted_center()
 	var points := PackedVector2Array()
 
 	for index in key_items.size():
-		var value: float = get(&"items/key_%d/value" % index)
+		var value: float = get_item_value(index)
 		var target := _get_polygon_point(index)
-		points.append(center.lerp(target, value / max_value))
+		points.append(radius_v2.lerp(target, value / max_value))
 
 	points.append(points[0])
 
-	draw_polyline(points, graph_outline_color)
+	draw_polyline(points, graph_outline_color, graph_outline_width)
 
 
 func _draw_guides() -> void:
 	if not show_guides or guide_step == 0:
 		return
 	var distance_covered := 0.0
-	var center := _get_shifted_center()
 
 	while distance_covered <= max_value:
-		var percent := distance_covered / max_value * radius
+		var p := distance_covered / max_value * radius
 		var points := PackedVector2Array()
 		for index in range(key_count):
 			var target_angle := (PI * 2 * index / key_count) - PI * 0.5
-			var target: Vector2 = center + Vector2(cos(target_angle), sin(target_angle)) * percent
+			var target: Vector2 = radius_v2 + Vector2(cos(target_angle), sin(target_angle)) * p
 			points.append(target)
 
 		points.append(points[0])
@@ -453,29 +477,28 @@ func _draw_guides() -> void:
 		distance_covered += guide_step
 
 
-func _get_point_as_location(point: Vector2) -> Location:
-	var center := _get_shifted_center()
+func _get_point_as_location(point: Vector2) -> TitleLocation:
+	var center := radius_v2
 	if point.x < center.x and point.y < center.y:
-		return Location.TOP_LEFT
+		return TitleLocation.TOP_LEFT
 	elif point.x == center.x and point.y < center.y:
-		return Location.TOP_CENTER
+		return TitleLocation.TOP_CENTER
 	elif point.x > center.x and point.y < center.y:
-		return Location.TOP_RIGHT
+		return TitleLocation.TOP_RIGHT
 	elif point.x < center.x and point.y == center.y:
-		return Location.CENTER_LEFT
+		return TitleLocation.CENTER_LEFT
 	elif point.x > center.x and point.y == center.y:
-		return Location.CENTER_RIGHT
+		return TitleLocation.CENTER_RIGHT
 	elif point.x < center.x and point.y > center.y:
-		return Location.BOTTOM_LEFT
+		return TitleLocation.BOTTOM_LEFT
 	elif point.x == center.x and point.y > center.y:
-		return Location.BOTTOM_CENTER
+		return TitleLocation.BOTTOM_CENTER
 	elif point.x > center.x and point.y > center.y:
-		return Location.BOTTOM_RIGHT
-	return Location.UNKNOWN
+		return TitleLocation.BOTTOM_RIGHT
+	return TitleLocation.UNKNOWN
 
 
 func _draw_titles() -> void:
-	var center := _get_shifted_center()
 	for index in range(key_count):
 		var subsitutes := {
 			"value": get_item_value(index)
