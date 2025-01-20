@@ -8,11 +8,6 @@ class_name RadarGraph
 # TODO: When min_value, max_value, rounded or step is changed it updates all the existing values to
 # match them
 
-# TODO: Draw the outline for the background
-
-# TODO: Add a layer adjustment system, an array of String's that can be reorganised to adjust the
-# way the graph is rendered
-
 # TODO: Godot Docs
 
 # TODO: Github Guide
@@ -162,25 +157,22 @@ const CleanDrawOrder: PackedStringArray = [
 
 var _encompassing_rect: Rect2
 var _title_rect_cache: Array[Rect2] = []
-var encompassing_offset := Vector2()
+var _encompassing_offset := Vector2()
 var radius_v2: Vector2:
 	get:
 		return Vector2(radius, radius)
+@export_group("")
 
 
-const Merror = preload("res://src/merror.gd")
-
-
-# Functions for users
-
+#region User
 func get_item(index: int) -> Dictionary:
-	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+	if _out_of_boundsi_err(index, 0, key_items.size() - 1, "index: get_item"):
 		return {}
 	return key_items[index]
 
 
 func set_item_value(index: int, value: float) -> void:
-	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+	if _out_of_boundsi_err(index, 0, key_items.size() - 1, "index: set_item_value"):
 		return
 	if rounded:
 		key_items[index]["value"] = clampf(roundf(snappedf(value, step)), min_value, max_value)
@@ -191,13 +183,13 @@ func set_item_value(index: int, value: float) -> void:
 
 
 func get_item_value(index: int) -> float:
-	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+	if _out_of_boundsi_err(index, 0, key_items.size() - 1, "index: get_item_value"):
 		return clampf(0, min_value, max_value)
 	return key_items[index].get_or_add("value", clampf(0, min_value, max_value))
 
 
 func set_item_title(index: int, title: String) -> void:
-	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+	if _out_of_boundsi_err(index, 0, key_items.size() - 1, "index: set_item_title"):
 		return
 	key_items[index]["title"] = title
 	_cache()
@@ -205,59 +197,52 @@ func set_item_title(index: int, title: String) -> void:
 
 
 func get_item_title(index: int) -> String:
-	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+	if _out_of_boundsi_err(index, 0, key_items.size() - 1, "index: get_item_title"):
 		return ""
 	return key_items[index].get_or_add("title", "")
 
 
 func set_item_tooltip(index: int, item_tooltip: String) -> void:
-	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+	if _out_of_boundsi_err(index, 0, key_items.size() - 1, "index: set_item_tooltip"):
 		return
 	key_items[index]["tooltip"] = item_tooltip
 
 
 func get_item_tooltip(index: int) -> String:
-	if Merror.boundsi(index, 0, key_items.size() - 1, "index"):
+	if _out_of_boundsi_err(index, 0, key_items.size() - 1, "index: get_item_tooltip"):
 		return ""
 	return key_items[index].get_or_add("tooltip", "")
 
+#endregion
 
-func _init() -> void:
+
+#region Engine Interaction
+
+func _ready() -> void:
 	_cache()
-
+	queue_redraw()
 
 func _get_tooltip(at_position: Vector2) -> String:
 	for index in range(key_count):
 		var rect := _title_rect_cache[index]
-		if rect.has_point(at_position - encompassing_offset):
+		if rect.has_point(at_position - _encompassing_offset):
 			return get_item_tooltip(index)
 	return ""
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAW:
-		draw_set_transform(encompassing_offset)
-		for i in draw_order:
-			var method := &"_draw_%s" % i
-			if not has_method(method):
-				printerr("No draw method found for ", i)
-				continue
-			call(method)
+		_draw_radar_graph()
 
-		# NOTE: Debug to view the title rect cache
-		for rect in _title_rect_cache:
-			draw_rect(rect, Color.WHITE, false, 2)
-
-		draw_rect(_encompassing_rect, Color.HOT_PINK, false, 2)
-
-		draw_circle(radius_v2 + encompassing_offset, 4, Color.HOT_PINK)
+#endregion
 
 
-func _get_minimum_size() -> Vector2:
-	return _encompassing_rect.size
-
+#region Cache And Size
 
 func _cache() -> void:
+	if not is_node_ready():
+		return
+
 	_update_title_rect_cache()
 
 	# Get the encompassing rect
@@ -266,7 +251,7 @@ func _cache() -> void:
 		_encompassing_rect = _encompassing_rect.merge(rect)
 
 	_update_size()
-	encompassing_offset = position - _encompassing_rect.position
+	_encompassing_offset = position - _encompassing_rect.position
 
 
 func _update_size() -> void:
@@ -318,6 +303,14 @@ func _update_title_rect_cache() -> void:
 		_title_rect_cache.append(
 			Rect2(font_pos + font_offset - Vector2(0, first_line_size.y), title_size))
 
+
+func _get_minimum_size() -> Vector2:
+	return _encompassing_rect.size
+
+#endregion
+
+
+#region Property List Management
 
 func _get_property_list() -> Array[Dictionary]:
 	var properties: Array[Dictionary] = []
@@ -400,11 +393,51 @@ func _property_get_revert(property: StringName) -> Variant:
 				return ""
 	return false
 
+#endregion
 
+
+#region Helper Functions
 
 func _get_polygon_point(index: int) -> Vector2:
 	var angle := (PI * 2 * index / key_count) - PI * 0.5
 	return radius_v2 + Vector2(cos(angle), sin(angle)) * radius_v2
+
+
+## Converts a point into a [enum TitleLocation].
+func _get_point_as_location(point: Vector2) -> TitleLocation:
+	var center := radius_v2
+	if point.x < center.x and point.y < center.y:
+		return TitleLocation.TOP_LEFT
+	elif point.x == center.x and point.y < center.y:
+		return TitleLocation.TOP_CENTER
+	elif point.x > center.x and point.y < center.y:
+		return TitleLocation.TOP_RIGHT
+	elif point.x < center.x and point.y == center.y:
+		return TitleLocation.CENTER_LEFT
+	elif point.x > center.x and point.y == center.y:
+		return TitleLocation.CENTER_RIGHT
+	elif point.x < center.x and point.y > center.y:
+		return TitleLocation.BOTTOM_LEFT
+	elif point.x == center.x and point.y > center.y:
+		return TitleLocation.BOTTOM_CENTER
+	elif point.x > center.x and point.y > center.y:
+		return TitleLocation.BOTTOM_RIGHT
+	return TitleLocation.UNKNOWN
+
+#endregion
+
+
+#region Draw Functions
+
+func _draw_radar_graph() -> void:
+	draw_set_transform(_encompassing_offset)
+	for i in draw_order:
+		var method := &"_draw_%s" % i
+		if not has_method(method):
+			printerr("No draw method found for ", i)
+			continue
+		call(method)
+	draw_set_transform(Vector2.ZERO)
 
 
 func _draw_background() -> void:
@@ -477,27 +510,6 @@ func _draw_guides() -> void:
 		distance_covered += guide_step
 
 
-func _get_point_as_location(point: Vector2) -> TitleLocation:
-	var center := radius_v2
-	if point.x < center.x and point.y < center.y:
-		return TitleLocation.TOP_LEFT
-	elif point.x == center.x and point.y < center.y:
-		return TitleLocation.TOP_CENTER
-	elif point.x > center.x and point.y < center.y:
-		return TitleLocation.TOP_RIGHT
-	elif point.x < center.x and point.y == center.y:
-		return TitleLocation.CENTER_LEFT
-	elif point.x > center.x and point.y == center.y:
-		return TitleLocation.CENTER_RIGHT
-	elif point.x < center.x and point.y > center.y:
-		return TitleLocation.BOTTOM_LEFT
-	elif point.x == center.x and point.y > center.y:
-		return TitleLocation.BOTTOM_CENTER
-	elif point.x > center.x and point.y > center.y:
-		return TitleLocation.BOTTOM_RIGHT
-	return TitleLocation.UNKNOWN
-
-
 func _draw_titles() -> void:
 	for index in range(key_count):
 		var subsitutes := {
@@ -510,3 +522,18 @@ func _draw_titles() -> void:
 		var font_position := rect.position + Vector2(0, first_line_size.y)
 		draw_multiline_string(
 			font, font_position, title, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size)
+
+#endregion
+
+
+#region Error Handling
+
+## Determines whether a int is out of a range of [member low] and [member high].
+## A optional [member identifier] can be passed to better describe the error.
+func _out_of_boundsi_err(value: int, low: int, high: int, identifier := "") -> bool:
+	identifier = identifier if identifier.length() > 0 else "Value"
+	if value < low or value > high:
+		printerr("%s (%d) is out of bounds. (%d, %d)" % [identifier, value, low, high])
+		return true
+	return false
+#endregion

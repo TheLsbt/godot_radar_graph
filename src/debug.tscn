@@ -11,8 +11,8 @@ script = ExtResource("1_a3brh")
 [node name="RadarGraph" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
-offset_right = 481.98
-offset_bottom = 338.98
+offset_right = 405.0
+offset_bottom = 339.0
 script = ExtResource("2_k8q7i")
 key_count = 8
 radius = 120.0
@@ -21,7 +21,7 @@ key_items = Array[Dictionary]([{
 ({value})",
 "tooltip": "tooltip 1",
 "use_custom_color": false,
-"value": 8.4
+"value": 6.2
 }, {
 "title": "Number 2
 ({value})",
@@ -53,9 +53,9 @@ key_items = Array[Dictionary]([{
 "use_custom_color": false,
 "value": 10.0
 }, {
-"title": "This is Number 7
+"title": "Number 7
 ({value})",
-"tooltip": "",
+"tooltip": "This tooltip belongs to number 7",
 "use_custom_color": false,
 "value": 0.0
 }, {
@@ -79,7 +79,7 @@ guide_color = Color(1, 1, 1, 1)
 guide_width = 0.7
 guide_step = 2.0
 draw_order = PackedStringArray("background", "guides", "graph", "graph_outline", "titles", "background_outline")
-items/key_0/value = 8.4
+items/key_0/value = 6.2
 items/key_0/title = "Number 1
 ({value})"
 items/key_0/tooltip = "tooltip 1"
@@ -104,9 +104,9 @@ items/key_5/title = "Number 6
 ({value})"
 items/key_5/tooltip = ""
 items/key_6/value = 0.0
-items/key_6/title = "This is Number 7
+items/key_6/title = "Number 7
 ({value})"
-items/key_6/tooltip = ""
+items/key_6/tooltip = "This tooltip belongs to number 7"
 items/key_7/value = 9.0
 items/key_7/title = "Number 8
 ({value})"
