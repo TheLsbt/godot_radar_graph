@@ -1,4 +1,5 @@
 @tool
+@icon("res://src/icon.svg")
 extends Control
 class_name RadarGraph
 
@@ -87,6 +88,10 @@ signal title_clicked(button: MouseButton, index: int)
 	set(value):
 		font_size = value
 		_cache()
+		queue_redraw()
+@export var font_color := Color.WHITE:
+	set(value):
+		font_color = value
 		queue_redraw()
 ## Scales the distance from the center of the graph, can be negative to decrese the distance.
 @export var title_seperation: float = 8:
