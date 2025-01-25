@@ -93,6 +93,14 @@ signal title_clicked(button: MouseButton, index: int)
 	set(value):
 		font_color = value
 		queue_redraw()
+@export var font_outline_color := Color.BLACK:
+	set(value):
+		font_outline_color = value
+		queue_redraw()
+@export var font_outline_size := 0:
+	set(value):
+		font_outline_size = value
+		queue_redraw()
 ## Scales the distance from the center of the graph, can be negative to decrese the distance.
 @export var title_seperation: float = 8:
 	set(value):
@@ -575,8 +583,15 @@ func _draw_titles() -> void:
 		var first_line_size := font.get_string_size(
 			title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size)
 		var font_position := rect.position + Vector2(0, first_line_size.y)
+		if font_outline_size > 0 and font_outline_color.a > 0:
+			draw_multiline_string_outline(
+				font, font_position, title, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size,
+				-1, font_outline_size, font_outline_color
+			)
 		draw_multiline_string(
-			font, font_position, title, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size)
+			font, font_position, title, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size, -1,
+			font_color)
+
 
 #endregion
 
