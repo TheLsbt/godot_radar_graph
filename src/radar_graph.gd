@@ -307,6 +307,7 @@ func _cache() -> void:
 	_encompassing_rect = Rect2()
 	for rect in _title_rect_cache:
 		_encompassing_rect = _encompassing_rect.merge(rect)
+	_encompassing_rect = _encompassing_rect.merge(Rect2(Vector2.ZERO, radius_v2 * 2))
 
 	_update_size()
 	_encompassing_offset = position - _encompassing_rect.position
@@ -323,11 +324,7 @@ func _update_title_rect_cache() -> void:
 	_title_rect_cache.clear()
 
 	for index in range(key_count):
-		# Get the subsitute variables
-		var subsitutes := {
-			"value": get_item_value(index)
-		}
-		var title: String = get_item_title(index).format(subsitutes, "{_}")
+		var title: String = get_item_title(index)
 		var title_size := font.get_multiline_string_size(
 			title, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 		var first_line_size := font.get_string_size(
@@ -568,10 +565,7 @@ func _draw_guides() -> void:
 
 func _draw_titles() -> void:
 	for index in range(key_count):
-		var subsitutes := {
-			"value": get_item_value(index)
-		}
-		var title := get_item_title(index).format(subsitutes)
+		var title := get_item_title(index)
 		var rect := _title_rect_cache[index]
 		var first_line_size := font.get_string_size(
 			title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size)

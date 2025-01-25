@@ -1,61 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://do0y2sp1egpxk"]
+[gd_scene load_steps=4 format=3 uid="uid://do0y2sp1egpxk"]
 
 [ext_resource type="Script" path="res://src/debug.gd" id="1_a3brh"]
 [ext_resource type="Script" path="res://src/radar_graph.gd" id="2_k8q7i"]
 [ext_resource type="FontFile" uid="uid://botqsldqnqjxn" path="res://RobotoMono-VariableFont_wght.ttf" id="3_kfrwk"]
-
-[sub_resource type="Animation" id="Animation_jpx1p"]
-resource_name = "new_animation"
-tracks/0/type = "method"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("RadarGraph")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 1),
-"transitions": PackedFloat32Array(1, 1),
-"values": [{
-"args": [0, 100.0],
-"method": &"set_item_value"
-}, {
-"args": [0, 0.0],
-"method": &"set_item_value"
-}]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("RadarGraph:items/key_1/value")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 1),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [0.0, 100.0]
-}
-
-[sub_resource type="Animation" id="Animation_rpjc1"]
-length = 0.001
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("RadarGraph:items/key_1/value")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [0.0]
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_utd32"]
-_data = {
-"RESET": SubResource("Animation_rpjc1"),
-"new_animation": SubResource("Animation_jpx1p")
-}
 
 [node name="Debug" type="Node2D"]
 position = Vector2(161, 132)
@@ -64,11 +11,11 @@ script = ExtResource("1_a3brh")
 [node name="RadarGraph" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
-offset_right = 404.98
-offset_bottom = 338.98
+offset_right = 600.0
+offset_bottom = 600.0
 script = ExtResource("2_k8q7i")
 key_count = 8
-radius = 120.0
+radius = 300.0
 key_items = Array[Dictionary]([{
 "title": "Number 1
 ({value})",
@@ -121,9 +68,9 @@ key_items = Array[Dictionary]([{
 step = 0.2
 rounded = true
 font = ExtResource("3_kfrwk")
-title_seperation = 5.49
+title_seperation = -100.0
 background_color = Color(0.705058, 0.802439, 0.972596, 1)
-background_outline_width = 3.2
+background_outline_width = 3.22
 graph_color = Color(0.8394, 0.89315, 0.984997, 1)
 graph_outline_color = Color(0.47168, 0.610492, 0.838542, 1)
 graph_outline_width = 0.8
@@ -164,8 +111,3 @@ items/key_7/value = 6.0
 items/key_7/title = "Number 8
 ({value})"
 items/key_7/tooltip = ""
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
-libraries = {
-"": SubResource("AnimationLibrary_utd32")
-}
