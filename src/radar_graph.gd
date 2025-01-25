@@ -5,9 +5,6 @@ class_name RadarGraph
 ## A simple radar graph plugin that is animateable. Note, that using [Theme]'s is not possible due
 ## to a Godot Limitation.
 
-# TODO: When min_value, max_value, rounded or step is changed it updates all the existing values to
-# match them
-
 # TODO: Godot Docs
 
 # TODO: Github Guide
@@ -18,6 +15,9 @@ enum TitleLocation { TOP_LEFT, TOP_CENTER, TOP_RIGHT, CENTER_LEFT, CENTER_RIGHT,
 const CleanDrawOrder: PackedStringArray = [
 	"background", "background_outline", "graph", "graph_outline", "guides", "titles"
 ]
+
+## Emitted when a title is clicked.
+signal title_clicked(button: MouseButton, index: int)
 
 ## The abount of keys that will be displayed, also determines ammount of sides the graph will have.
 ## [br]A graph can not have less than 3 keys.
@@ -47,6 +47,7 @@ const CleanDrawOrder: PackedStringArray = [
 		min_value = value
 		if min_value > max_value:
 			max_value = min_value
+		_try_mass_value_update()
 		queue_redraw()
 ## Maximum value. Range is clamped if an items value is greater than [member max_value].
 @export var max_value := 100.0:
@@ -54,6 +55,7 @@ const CleanDrawOrder: PackedStringArray = [
 		max_value = value
 		if max_value < min_value:
 			min_value = max_value
+		_try_mass_value_update()
 		queue_redraw()
 # TODO: When step is changed update all the item values  (after a bit to stop editor lag)
 ## If greater than 0, item_value will always be rounded to a multiple of this property's value.
@@ -62,12 +64,14 @@ const CleanDrawOrder: PackedStringArray = [
 @export var step: float = 0.0:
 	set(value):
 		step = snappedf(value, 0.02)
+		_try_mass_value_update()
 		queue_redraw()
 # TODO: When rounded is changed update all the item values  (after a bit to stop editor lag)
 ## If [code]true[/code], value will always be rounded to the nearest integer.
 @export var rounded: bool = false:
 	set(value):
 		rounded = value
+		_try_mass_value_update()
 		queue_redraw()
 
 @export_group("Display")
@@ -213,26 +217,80 @@ func get_item_tooltip(index: int) -> String:
 		return ""
 	return key_items[index].get_or_add("tooltip", "")
 
+
+func get_title_index(at_position: Vector2) -> int:
+	for index in range(key_count):
+		var rect := _title_rect_cache[index]
+		if rect.has_point(at_position - _encompassing_offset):
+			return index
+	return -1
+
 #endregion
 
 
 #region Engine Interaction
 
+# Mass updating is updating the values of each item, some precautions need to be made.
+# Because of how the items are displayed the property list needs to be updated each time so while
+# in the editor we need to wait before actually updating the editor.
+const UPDATE_WAIT_TIME := 0.4
+var _mass_update_timer: Timer
+
+
+func _enter_tree() -> void:
+	if Engine.is_editor_hint():
+		_mass_update_timer = Timer.new()
+		_mass_update_timer.wait_time = UPDATE_WAIT_TIME
+		_mass_update_timer.one_shot = true
+		_mass_update_timer.timeout.connect(_mass_update_values)
+		add_child(_mass_update_timer)
+
+
+func _exit_tree() -> void:
+	if is_instance_valid(_mass_update_timer):
+		_mass_update_timer.queue_free()
+
+
+func _mass_update_values() -> void:
+	for index in range(key_count):
+		set_item_value(index, get_item_value(index))
+
+	if Engine.is_editor_hint():
+		notify_property_list_changed()
+		print_rich("[code]Radar Graph mass-value update[/code]")
+
+
+func _try_mass_value_update() -> void:
+	if not Engine.is_editor_hint():
+		_mass_update_values()
+	elif _mass_update_timer:
+		_mass_update_timer.start(UPDATE_WAIT_TIME)
+
+
 func _ready() -> void:
 	_cache()
 	queue_redraw()
 
+
 func _get_tooltip(at_position: Vector2) -> String:
-	for index in range(key_count):
-		var rect := _title_rect_cache[index]
-		if rect.has_point(at_position - _encompassing_offset):
-			return get_item_tooltip(index)
+	var index := get_title_index(at_position)
+	if index > -1:
+		return get_item_tooltip(index)
 	return ""
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAW:
 		_draw_radar_graph()
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if event.is_pressed():
+			var index := get_title_index(event.position)
+			if index > -1:
+				title_clicked.emit(event.button_index, index)
+
 
 #endregion
 
@@ -270,7 +328,8 @@ func _update_title_rect_cache() -> void:
 			"value": get_item_value(index)
 		}
 		var title: String = get_item_title(index).format(subsitutes, "{_}")
-		var title_size := font.get_multiline_string_size(title, 0, -1, font_size)
+		var title_size := font.get_multiline_string_size(
+			title, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 		var first_line_size := font.get_string_size(
 			title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_CENTER, title_size.x, font_size)
 
@@ -367,8 +426,6 @@ func _set(property: StringName, value: Variant) -> bool:
 
 func _property_can_revert(property: StringName) -> bool:
 	if property.begins_with("items/key_"):
-		var index := property.get_slice("_", 1).to_int()
-
 		var key := property.get_slice("/", 2)
 		if key == "value" and get(property) != 0:
 			return true
@@ -381,7 +438,6 @@ func _property_can_revert(property: StringName) -> bool:
 
 func _property_get_revert(property: StringName) -> Variant:
 	if property.begins_with("items/key_"):
-		var index := property.get_slice("_", 1).to_int()
 
 		var key := property.get_slice("/", 2)
 		match key:
