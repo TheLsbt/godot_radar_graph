@@ -251,22 +251,6 @@ func _exit_tree() -> void:
 		_mass_update_timer.queue_free()
 
 
-func _mass_update_values() -> void:
-	for index in range(key_count):
-		set_item_value(index, get_item_value(index))
-
-	if Engine.is_editor_hint():
-		notify_property_list_changed()
-		print_rich("[code]Radar Graph mass-value update[/code]")
-
-
-func _try_mass_value_update() -> void:
-	if not Engine.is_editor_hint():
-		_mass_update_values()
-	elif _mass_update_timer:
-		_mass_update_timer.start(UPDATE_WAIT_TIME)
-
-
 func _ready() -> void:
 	_cache()
 	queue_redraw()
@@ -450,6 +434,22 @@ func _property_get_revert(property: StringName) -> Variant:
 
 
 #region Helper Functions
+
+func _try_mass_value_update() -> void:
+	if not Engine.is_editor_hint():
+		_mass_update_values()
+	elif _mass_update_timer:
+		_mass_update_timer.start(UPDATE_WAIT_TIME)
+
+
+func _mass_update_values() -> void:
+	for index in range(key_count):
+		set_item_value(index, get_item_value(index))
+
+	if Engine.is_editor_hint():
+		notify_property_list_changed()
+		print_rich("[code]Radar Graph mass-value update[/code]")
+
 
 func _get_polygon_point(index: int) -> Vector2:
 	var angle := (PI * 2 * index / key_count) - PI * 0.5
