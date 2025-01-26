@@ -264,6 +264,10 @@ func _exit_tree() -> void:
 		_mass_update_timer.queue_free()
 
 
+func _init() -> void:
+	key_items.resize(key_count)
+
+
 func _ready() -> void:
 	_cache()
 	queue_redraw()
@@ -320,11 +324,15 @@ func _update_size() -> void:
 func _update_title_rect_cache() -> void:
 	_title_rect_cache.clear()
 
+	var title_font := font
+	if not is_instance_valid(font):
+		title_font = ThemeDB.get_fallback_font()
+
 	for index in range(key_count):
 		var title: String = get_item_title(index)
-		var title_size := font.get_multiline_string_size(
+		var title_size := title_font.get_multiline_string_size(
 			title, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-		var first_line_size := font.get_string_size(
+		var first_line_size := title_font.get_string_size(
 			title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_CENTER, title_size.x, font_size)
 
 		var point_pos := _get_polygon_point(index)
@@ -520,7 +528,7 @@ func _draw_background_outline() -> void:
 
 	var points := PackedVector2Array()
 
-	for index in key_items.size():
+	for index in range(key_count):
 		points.append(_get_polygon_point(index))
 
 	points.append(points[0])
@@ -531,7 +539,7 @@ func _draw_background_outline() -> void:
 func _draw_graph() -> void:
 	var points := PackedVector2Array()
 
-	for index in key_items.size():
+	for index in range(key_count):
 		var value: float = get_item_value(index)
 		var target := _get_polygon_point(index)
 		points.append(radius_v2.lerp(target, value / max_value))
@@ -545,7 +553,7 @@ func _draw_graph_outline() -> void:
 
 	var points := PackedVector2Array()
 
-	for index in key_items.size():
+	for index in range(key_count):
 		var value: float = get_item_value(index)
 		var target := _get_polygon_point(index)
 		points.append(radius_v2.lerp(target, value / max_value))
@@ -577,20 +585,24 @@ func _draw_guides() -> void:
 
 
 func _draw_titles() -> void:
+	var title_font := font
+	if not is_instance_valid(font):
+		title_font = ThemeDB.get_fallback_font()
+
 	for index in range(key_count):
 		var title := get_item_title(index)
 		var rect := _title_rect_cache[index]
-		var first_line_size := font.get_string_size(
+		var first_line_size := title_font.get_string_size(
 			title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size)
 		var font_position := rect.position + Vector2(0, first_line_size.y)
 		if font_outline_size > 0 and font_outline_color.a > 0:
 			draw_multiline_string_outline(
-				font, font_position, title, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size,
-				-1, font_outline_size, font_outline_color
+				title_font, font_position, title, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x,
+				font_size, -1, font_outline_size, font_outline_color
 			)
 		draw_multiline_string(
-			font, font_position, title, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size, -1,
-			font_color)
+			title_font, font_position, title, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size,
+			-1, font_color)
 
 
 #endregion
@@ -603,7 +615,6 @@ func _draw_titles() -> void:
 func _out_of_boundsi_err(value: int, low: int, high: int, identifier := "") -> bool:
 	identifier = identifier if identifier.length() > 0 else "Value"
 	if value < low or value > high:
-		printerr("%s (%d) is out of bounds. (%d, %d)" % [identifier, value, low, high])
 		return true
 	return false
 #endregion
