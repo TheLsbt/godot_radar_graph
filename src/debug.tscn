@@ -11,11 +11,11 @@ script = ExtResource("1_a3brh")
 [node name="RadarGraph" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
-offset_right = 600.0
-offset_bottom = 600.0
+offset_right = 283.0
+offset_bottom = 284.0
 script = ExtResource("2_k8q7i")
 key_count = 8
-radius = 300.0
+radius = 90.0
 key_items = Array[Dictionary]([{
 "title": "Number 1
 ({value})",
@@ -47,30 +47,23 @@ key_items = Array[Dictionary]([{
 "use_custom_color": false,
 "value": 6.0
 }, {
-"title": "Number 6
-({value})",
+"title": "",
 "tooltip": "",
-"use_custom_color": false,
-"value": 6.0
+"value": 0.0
 }, {
-"title": "Number 7
-({value})",
-"tooltip": "This tooltip belongs to number 7",
-"use_custom_color": false,
-"value": 6.0
-}, {
-"title": "Number 8
-({value})",
+"title": "",
 "tooltip": "",
-"use_custom_color": false,
-"value": 6.0
+"value": 0.0
+}, {
+"title": "",
+"tooltip": "",
+"value": 0.0
 }])
 step = 0.2
 rounded = true
 font = ExtResource("3_kfrwk")
 font_color = Color(0.390598, 0.47869, 0.630208, 1)
 font_outline_size = 9
-title_seperation = -100.0
 background_color = Color(0.705058, 0.802439, 0.972596, 1)
 background_outline_width = 3.22
 graph_color = Color(0.8394, 0.89315, 0.984997, 1)
@@ -81,6 +74,7 @@ guide_color = Color(1, 1, 1, 1)
 guide_width = 0.7
 guide_step = 10.0
 draw_order = PackedStringArray("background", "guides", "graph", "graph_outline", "titles", "background_outline")
+debug_draw = true
 items/key_0/value = 6.0
 items/key_0/title = "Number 1
 ({value})"
@@ -101,15 +95,12 @@ items/key_4/value = 6.0
 items/key_4/title = "Number 5
 ({value})"
 items/key_4/tooltip = ""
-items/key_5/value = 6.0
-items/key_5/title = "Number 6
-({value})"
+items/key_5/value = 0.0
+items/key_5/title = ""
 items/key_5/tooltip = ""
-items/key_6/value = 6.0
-items/key_6/title = "Number 7
-({value})"
-items/key_6/tooltip = "This tooltip belongs to number 7"
-items/key_7/value = 6.0
-items/key_7/title = "Number 8
-({value})"
+items/key_6/value = 0.0
+items/key_6/title = ""
+items/key_6/tooltip = ""
+items/key_7/value = 0.0
+items/key_7/title = ""
 items/key_7/tooltip = ""

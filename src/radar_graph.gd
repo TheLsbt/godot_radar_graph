@@ -170,7 +170,11 @@ signal title_clicked(button: MouseButton, index: int)
 @export var draw_order: PackedStringArray = CleanDrawOrder:
 	set(value):
 		draw_order = value
+@export var debug_draw := false:
+	set(value):
+		debug_draw = value
 		queue_redraw()
+@export_group("")
 
 var _encompassing_rect: Rect2
 var _title_rect_cache: Array[Rect2] = []
@@ -178,7 +182,6 @@ var _encompassing_offset := Vector2()
 var radius_v2: Vector2:
 	get:
 		return Vector2(radius, radius)
-@export_group("")
 
 
 #region User
@@ -334,6 +337,8 @@ func _update_title_rect_cache() -> void:
 			title, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 		var first_line_size := title_font.get_string_size(
 			title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_CENTER, title_size.x, font_size)
+		var line_count := title.get_slice_count("\n")
+		var one_line := line_count == 1
 
 		var point_pos := _get_polygon_point(index)
 		var direction := radius_v2.direction_to(point_pos)
@@ -345,11 +350,18 @@ func _update_title_rect_cache() -> void:
 		var location := _get_point_as_location(point_pos)
 		match location:
 			TitleLocation.TOP_LEFT:
-				font_offset = Vector2(-title_size.x, -first_line_size.y)
+				if one_line:
+					font_offset = Vector2(-title_size.x, 0)
+				else:
+					font_offset = Vector2(-title_size.x, -first_line_size.y)
 			TitleLocation.TOP_CENTER:
-				font_offset = Vector2(-title_size.x / 2, -first_line_size.y)
+				if one_line:
+					font_offset = Vector2(-title_size.x / 2, 0)
+				else:
+					font_offset = Vector2(-title_size.x / 2, -first_line_size.y)
 			TitleLocation.TOP_RIGHT:
-				font_offset = Vector2(0, -first_line_size.y)
+				if not one_line:
+					font_offset = Vector2(0, -first_line_size.y)
 			TitleLocation.CENTER_LEFT:
 				font_offset = Vector2(-title_size.x, (-title_size.y * 0.5) + first_line_size.y)
 			TitleLocation.CENTER_RIGHT:
@@ -363,6 +375,7 @@ func _update_title_rect_cache() -> void:
 
 		_title_rect_cache.append(
 			Rect2(font_pos + font_offset - Vector2(0, first_line_size.y), title_size))
+
 
 
 func _get_minimum_size() -> Vector2:
@@ -511,6 +524,11 @@ func _draw_radar_graph() -> void:
 			printerr("No draw method found for ", i)
 			continue
 		call(method)
+
+	if debug_draw:
+		for t in _title_rect_cache:
+			draw_rect(t, Color.LIGHT_BLUE, false, 2)
+
 	draw_set_transform(Vector2.ZERO)
 
 
