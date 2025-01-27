@@ -267,6 +267,8 @@ func _exit_tree() -> void:
 
 func _init() -> void:
 	key_items.resize(key_count)
+	# This is a hacky fix becuase drawing can get messed up without this.
+	item_rect_changed.connect(func(): _cache(); queue_redraw())
 
 
 func _ready() -> void:
@@ -300,9 +302,6 @@ func _gui_input(event: InputEvent) -> void:
 #region Cache And Size
 
 func _cache() -> void:
-	if not is_node_ready():
-		return
-
 	_update_title_rect_cache()
 
 	# Get the encompassing rect
@@ -516,7 +515,11 @@ func _get_point_as_location(point: Vector2) -> TitleLocation:
 #region Draw Functions
 
 func _draw_radar_graph() -> void:
-	draw_set_transform(_encompassing_offset)
+	if Engine.is_editor_hint():
+		draw_set_transform(_encompassing_offset)
+	else:
+		draw_set_transform(_encompassing_offset - position)
+
 	for i in draw_order:
 		var method := &"_rg_draw_%s" % i
 		if has_method(method):

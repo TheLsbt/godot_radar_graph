@@ -1,0 +1,58 @@
+[gd_scene load_steps=2 format=3 uid="uid://detn5loku2ed0"]
+
+[ext_resource type="Script" path="res://demos/custom_drawing/icon_graph.gd" id="1_6n1r3"]
+
+[node name="RadarGraph" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 129.344
+offset_bottom = 128.0
+script = ExtResource("1_6n1r3")
+background_shadow_color = Color(0.384314, 0.341176, 0.376471, 1)
+background_shadow_offset = Vector2(-3.17, 4.245)
+intersecting_color = Color(0.929412, 0.54902, 0.407843, 1)
+key_count = 5
+radius = 60.0
+key_items = Array[Dictionary]([{
+"title": "",
+"tooltip": "",
+"value": 3.0
+}, {
+"title": "",
+"tooltip": "",
+"value": 1.5
+}, {
+"title": "",
+"tooltip": "",
+"value": 3.0
+}, {
+"title": "",
+"tooltip": "",
+"value": 1.8
+}, {
+"title": "",
+"tooltip": "",
+"value": 4.0
+}])
+max_value = 4.0
+background_color = Color(0.494118, 0.713726, 0.470588, 1)
+graph_color = Color(0.811765, 0.407843, 0.352941, 1)
+show_guides = true
+guide_color = Color(0.384314, 0.576471, 0.435294, 1)
+guide_step = 1.0
+draw_order = PackedStringArray("background", "background_outline", "graph_outline", "guides", "graph", "titles")
+items/key_0/value = 3.0
+items/key_0/title = ""
+items/key_0/tooltip = ""
+items/key_1/value = 1.5
+items/key_1/title = ""
+items/key_1/tooltip = ""
+items/key_2/value = 3.0
+items/key_2/title = ""
+items/key_2/tooltip = ""
+items/key_3/value = 1.8
+items/key_3/title = ""
+items/key_3/tooltip = ""
+items/key_4/value = 4.0
+items/key_4/title = ""
+items/key_4/tooltip = ""
