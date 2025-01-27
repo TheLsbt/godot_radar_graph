@@ -518,7 +518,7 @@ func _get_point_as_location(point: Vector2) -> TitleLocation:
 func _draw_radar_graph() -> void:
 	draw_set_transform(_encompassing_offset)
 	for i in draw_order:
-		var method := &"_draw_%s" % i
+		var method := &"_rg_draw_%s" % i
 		if has_method(method):
 			call(method)
 
@@ -529,7 +529,7 @@ func _draw_radar_graph() -> void:
 	draw_set_transform(Vector2.ZERO)
 
 
-func _draw_background() -> void:
+func _rg_draw_background() -> void:
 	var points := PackedVector2Array()
 	for i in range(key_count):
 		points.append(_get_polygon_point(i))
@@ -537,7 +537,7 @@ func _draw_background() -> void:
 	draw_polygon(points, [background_color])
 
 
-func _draw_background_outline() -> void:
+func _rg_draw_background_outline() -> void:
 	if background_outline_width == 0 or background_outline_color.a == 0:
 		return
 
@@ -551,7 +551,7 @@ func _draw_background_outline() -> void:
 	draw_polyline(points, background_outline_color, background_outline_width)
 
 
-func _draw_graph() -> void:
+func _rg_draw_graph() -> void:
 	var points := PackedVector2Array()
 
 	for index in range(key_count):
@@ -562,7 +562,7 @@ func _draw_graph() -> void:
 	draw_polygon(points, [graph_color])
 
 
-func _draw_graph_outline() -> void:
+func _rg_draw_graph_outline() -> void:
 	if graph_outline_width == 0 or graph_outline_color.a == 0:
 		return
 
@@ -578,7 +578,7 @@ func _draw_graph_outline() -> void:
 	draw_polyline(points, graph_outline_color, graph_outline_width)
 
 
-func _draw_guides() -> void:
+func _rg_draw_guides() -> void:
 	if not show_guides or guide_step == 0:
 		return
 	var distance_covered := 0.0
@@ -599,7 +599,7 @@ func _draw_guides() -> void:
 		distance_covered += guide_step
 
 
-func _draw_titles() -> void:
+func _rg_draw_titles() -> void:
 	var title_font := font
 	if not is_instance_valid(font):
 		title_font = ThemeDB.get_fallback_font()
