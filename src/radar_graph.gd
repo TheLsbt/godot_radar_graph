@@ -477,6 +477,7 @@ func _try_mass_value_update() -> void:
 		_mass_update_timer.start(UPDATE_WAIT_TIME)
 
 
+## Updates all the values
 func _mass_update_values() -> void:
 	for index in range(key_count):
 		set_item_value(index, get_item_value(index))
@@ -524,7 +525,7 @@ func _draw_radar_graph() -> void:
 		if has_method(method):
 			call(method)
 
-	if debug_draw:
+	if debug_draw and Engine.is_editor_hint():
 		for t in _title_rect_cache:
 			draw_rect(t, Color.LIGHT_BLUE, false, 2)
 
