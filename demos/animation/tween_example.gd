@@ -12,4 +12,3 @@ func _on_button_pressed() -> void:
 		var rand := randf_range(radar_graph.min_value, radar_graph.max_value)
 		tween.tween_property(
 			radar_graph, "items/key_%d/value" %i, rand, ANIMATION_DURATION)
-		print(rand)
