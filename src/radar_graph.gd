@@ -170,6 +170,9 @@ signal title_clicked(button: MouseButton, index: int)
 @export var draw_order: PackedStringArray = CleanDrawOrder:
 	set(value):
 		draw_order = value
+		for i in draw_order:
+			if not has_method("draw_%s" % i):
+				printerr("No draw method found for ", i)
 		queue_redraw()
 @export var debug_draw := false:
 	set(value):
@@ -521,10 +524,8 @@ func _draw_radar_graph() -> void:
 	draw_set_transform(_encompassing_offset)
 	for i in draw_order:
 		var method := &"_draw_%s" % i
-		if not has_method(method):
-			printerr("No draw method found for ", i)
-			continue
-		call(method)
+		if has_method(method):
+			call(method)
 
 	if debug_draw:
 		for t in _title_rect_cache:
