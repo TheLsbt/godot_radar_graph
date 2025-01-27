@@ -12,7 +12,7 @@ config_version=5
 
 config/name="godot_radar_graph"
 config/features=PackedStringArray("4.3", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="res://assets/full_icon.svg"
 
 [rendering]
 
