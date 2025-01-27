@@ -170,9 +170,6 @@ signal title_clicked(button: MouseButton, index: int)
 @export var draw_order: PackedStringArray = CleanDrawOrder:
 	set(value):
 		draw_order = value
-		for i in draw_order:
-			if not has_method("draw_%s" % i):
-				printerr("No draw method found for ", i)
 		queue_redraw()
 @export var debug_draw := false:
 	set(value):
