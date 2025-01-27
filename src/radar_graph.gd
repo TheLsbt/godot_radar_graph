@@ -170,6 +170,7 @@ signal title_clicked(button: MouseButton, index: int)
 @export var draw_order: PackedStringArray = CleanDrawOrder:
 	set(value):
 		draw_order = value
+		queue_redraw()
 @export var debug_draw := false:
 	set(value):
 		debug_draw = value
