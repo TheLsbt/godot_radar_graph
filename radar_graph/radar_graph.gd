@@ -1,12 +1,9 @@
 @tool
-@icon("res://src/icon.svg")
+@icon("res://radar_graph/radar_graph_icon.svg")
 extends Control
 class_name RadarGraph
 
-## A simple radar graph plugin that is animateable. Note, that using [Theme]'s is not possible due
-## to a Godot Limitation.
-
-# TODO: Godot Docs
+## A highly customizable script that allows you to visualize a radar graph.
 
 # TODO: Github Guide
 
