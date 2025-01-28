@@ -13,10 +13,10 @@ grow_vertical = 2
 layout_mode = 2
 script = ExtResource("1_6n1r3")
 background_shadow_color = Color(0.384314, 0.341176, 0.376471, 1)
-background_shadow_offset = Vector2(-3.17, 4.245)
+background_shadow_offset = Vector2(-15, 20)
 intersecting_color = Color(0.929412, 0.54902, 0.407843, 1)
 key_count = 5
-radius = 120.0
+radius = 180.0
 key_items = Array[Dictionary]([{
 "title": "",
 "tooltip": "",

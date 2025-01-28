@@ -13,12 +13,12 @@ grow_vertical = 2
 layout_mode = 2
 script = ExtResource("1_g11c6")
 shadow_color = Color(0.113725, 0.133333, 0.160784, 1)
-shadow_offset = Vector2(-5.535, 7.93)
+shadow_offset = Vector2(-15, 20)
 key_count = 5
-radius = 120.0
+radius = 180.0
 key_items = Array[Dictionary]([{
 "title": "Title 1",
-"tooltip": "",
+"tooltip": "This is the tooltip of the first title.",
 "value": 3.0
 }, {
 "title": "Title 2",
@@ -47,7 +47,7 @@ guide_width = 3.0
 guide_step = 1.0
 items/key_0/value = 3.0
 items/key_0/title = "Title 1"
-items/key_0/tooltip = ""
+items/key_0/tooltip = "This is the tooltip of the first title."
 items/key_1/value = 1.5
 items/key_1/title = "Title 2"
 items/key_1/tooltip = "Item 1"
