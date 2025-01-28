@@ -235,7 +235,7 @@ func get_item_tooltip(index: int) -> String:
 func get_title_index(at_position: Vector2) -> int:
 	for index in range(key_count):
 		var rect := _title_rect_cache[index]
-		if rect.has_point(at_position - _encompassing_offset):
+		if rect.has_point(at_position - (_encompassing_offset - position)):
 			return index
 	return -1
 
@@ -269,6 +269,7 @@ func _init() -> void:
 	key_items.resize(key_count)
 	# This is a hacky fix becuase drawing can get messed up without this.
 	item_rect_changed.connect(func(): _cache(); queue_redraw())
+
 
 
 #func _ready() -> void:
