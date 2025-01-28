@@ -5,6 +5,10 @@ const ANIMATION_DURATION := 0.4
 @onready var radar_graph: RadarGraph = $RadarGraph
 
 
+func _ready() -> void:
+	get_window().title = "Radar Graph Tween Example"
+
+
 func _on_button_pressed() -> void:
 	var tween := create_tween().set_parallel()
 

@@ -2,57 +2,61 @@
 
 [ext_resource type="Script" path="res://demos/custom_drawing/drop_shadow.gd" id="1_g11c6"]
 
-[node name="RadarGraph" type="Control"]
-layout_mode = 3
-anchors_preset = 0
-offset_left = 1.0
-offset_top = 2.0
-offset_right = 130.344
-offset_bottom = 130.0
+[node name="CenterContainer" type="CenterContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RadarGraph" type="Control" parent="."]
+layout_mode = 2
 script = ExtResource("1_g11c6")
 shadow_color = Color(0.113725, 0.133333, 0.160784, 1)
 shadow_offset = Vector2(-5.535, 7.93)
 key_count = 5
-radius = 60.0
+radius = 120.0
 key_items = Array[Dictionary]([{
-"title": "",
+"title": "Title 1",
 "tooltip": "",
 "value": 3.0
 }, {
-"title": "",
+"title": "Title 2",
 "tooltip": "Item 1",
 "value": 1.5
 }, {
-"title": "",
+"title": "Title 3",
 "tooltip": "Item 2",
 "value": 3.0
 }, {
-"title": "",
+"title": "Title 4",
 "tooltip": "Item 3",
 "value": 1.8
 }, {
-"title": "",
+"title": "Title 5",
 "tooltip": "Item 4",
 "value": 4.0
 }])
 max_value = 4.0
+font_size = 24
 background_color = Color(0.211765, 0.239216, 0.290196, 1)
 graph_color = Color(0.533333, 0.713726, 0.866667, 1)
 show_guides = true
 guide_color = Color(0.0117647, 0.0156863, 0.0156863, 0.301961)
+guide_width = 3.0
 guide_step = 1.0
 items/key_0/value = 3.0
-items/key_0/title = ""
+items/key_0/title = "Title 1"
 items/key_0/tooltip = ""
 items/key_1/value = 1.5
-items/key_1/title = ""
+items/key_1/title = "Title 2"
 items/key_1/tooltip = "Item 1"
 items/key_2/value = 3.0
-items/key_2/title = ""
+items/key_2/title = "Title 3"
 items/key_2/tooltip = "Item 2"
 items/key_3/value = 1.8
-items/key_3/title = ""
+items/key_3/title = "Title 4"
 items/key_3/tooltip = "Item 3"
 items/key_4/value = 4.0
-items/key_4/title = ""
+items/key_4/title = "Title 5"
 items/key_4/tooltip = "Item 4"

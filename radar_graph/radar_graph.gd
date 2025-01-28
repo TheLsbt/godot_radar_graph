@@ -271,9 +271,9 @@ func _init() -> void:
 	item_rect_changed.connect(func(): _cache(); queue_redraw())
 
 
-func _ready() -> void:
-	_cache()
-	queue_redraw()
+#func _ready() -> void:
+	#_cache()
+	#queue_redraw()
 
 
 func _get_tooltip(at_position: Vector2) -> String:
@@ -515,10 +515,7 @@ func _get_point_as_location(point: Vector2) -> TitleLocation:
 #region Draw Functions
 
 func _draw_radar_graph() -> void:
-	if Engine.is_editor_hint():
-		draw_set_transform(_encompassing_offset)
-	else:
-		draw_set_transform(_encompassing_offset - position)
+	draw_set_transform(_encompassing_offset - position)
 
 	for i in draw_order:
 		var method := &"_rg_draw_%s" % i

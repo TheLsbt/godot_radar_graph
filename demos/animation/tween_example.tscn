@@ -4,8 +4,12 @@
 [ext_resource type="Script" path="res://demos/animation/tween_example.gd" id="1_mfm77"]
 
 [node name="TweenExample" type="VBoxContainer"]
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
 script = ExtResource("1_mfm77")
 
 [node name="RadarGraph" type="Control" parent="."]
@@ -13,7 +17,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 script = ExtResource("1_4plq8")
 key_count = 5
-radius = 60.0
+radius = 160.0
 key_items = Array[Dictionary]([{
 "title": "",
 "tooltip": "",
@@ -39,6 +43,7 @@ background_color = Color(0.322917, 0.484375, 0.337897, 1)
 graph_color = Color(0.556863, 0.937255, 0.592157, 0.478431)
 show_guides = true
 guide_color = Color(0.451931, 0.729167, 0.477654, 1)
+guide_width = 3.0
 guide_step = 20.0
 items/key_0/value = 0.0
 items/key_0/title = ""
@@ -58,6 +63,7 @@ items/key_4/tooltip = ""
 
 [node name="Button" type="Button" parent="."]
 layout_mode = 2
+size_flags_horizontal = 4
 text = "Randomize Values"
 
 [connection signal="pressed" from="Button" to="." method="_on_button_pressed"]

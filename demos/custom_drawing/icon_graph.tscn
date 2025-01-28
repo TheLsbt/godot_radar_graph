@@ -2,17 +2,21 @@
 
 [ext_resource type="Script" path="res://demos/custom_drawing/icon_graph.gd" id="1_6n1r3"]
 
-[node name="RadarGraph" type="Control"]
-layout_mode = 3
-anchors_preset = 0
-offset_right = 129.344
-offset_bottom = 128.0
+[node name="CenterContainer" type="CenterContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RadarGraph" type="Control" parent="."]
+layout_mode = 2
 script = ExtResource("1_6n1r3")
 background_shadow_color = Color(0.384314, 0.341176, 0.376471, 1)
 background_shadow_offset = Vector2(-3.17, 4.245)
 intersecting_color = Color(0.929412, 0.54902, 0.407843, 1)
 key_count = 5
-radius = 60.0
+radius = 120.0
 key_items = Array[Dictionary]([{
 "title": "",
 "tooltip": "",
@@ -39,6 +43,7 @@ background_color = Color(0.494118, 0.713726, 0.470588, 1)
 graph_color = Color(0.811765, 0.407843, 0.352941, 1)
 show_guides = true
 guide_color = Color(0.384314, 0.576471, 0.435294, 1)
+guide_width = 3.0
 guide_step = 1.0
 draw_order = PackedStringArray("background", "background_outline", "graph_outline", "guides", "graph", "titles")
 items/key_0/value = 3.0
