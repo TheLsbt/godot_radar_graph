@@ -6,7 +6,7 @@
 
 
 # Installation
-n/a
+Download the files from the [Godot Asset Library](https://godotengine.org/asset-library/asset/3670) or download the latest release.
 
 # Setting Up A Graph
 1. Just search for `RadarGraph` while adding a node.
