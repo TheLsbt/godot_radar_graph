@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://tynkq11jnvwk"]
+
+[ext_resource type="Script" path="res://debug/fo_radar_graph.gd" id="1_eu1y1"]
+
+[node name="fo_debug" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 160.0
+offset_top = 29.0
+offset_right = 486.546
+offset_bottom = 430.44
+script = ExtResource("1_eu1y1")
+radius = 127.72
+seperation = 4
