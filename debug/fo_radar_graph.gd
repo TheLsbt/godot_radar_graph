@@ -23,7 +23,7 @@ func get_item_title(index: int) -> String:
 	return "line1\nline2\nline3"
 
 
-func index_to_vector2(index: int, center := Vector2(radius, radius)) -> Vector2:
+func index_to_vector2(index: int, center: Vector2) -> Vector2:
 	# Offset the roation so the graph can start at the topmost point
 	var angle := (PI * 2 * index / key_count) - PI * 0.5
 	return center + Vector2(cos(angle), sin(angle)) * radius
@@ -39,10 +39,11 @@ func get_title_rect_at(at_position: Vector2) -> int:
 
 
 #region Private
+## Converts a [Vector2] into a [enum TitleRectCache.Location]. The [param point]
+## should be realitive to [param center].
 # The vector 2 passed should be unprocessed and realitive to
 # Vector2(radius, radius)
-func _vector2_to_location(point: Vector2) -> TitleRectCache.Location:
-	var center := Vector2(radius, radius)
+func _vector2_to_location(point: Vector2, center: Vector2) -> TitleRectCache.Location:
 	if point.x < center.x and point.y < center.y:
 		return TitleRectCache.Location.TOP_LEFT
 	elif point.x == center.x and point.y < center.y:
@@ -87,6 +88,7 @@ class TitleRectCache:
 	var position: Vector2
 
 
+## The center, after the title rect cache is computed
 var computed_center: Vector2
 var _computed_rect: Rect2
 var _cached_title_rects: Array[TitleRectCache] = []
@@ -123,13 +125,13 @@ func _compute_title_rects() -> void:
 
 		# For this we can use a fake center (Vector2(radius, radius)
 		var center := Vector2(radius, radius)
-		var index_pos := index_to_vector2(index)
+		var index_pos := index_to_vector2(index, center)
 		var direction := center.direction_to(index_pos)
 
 		var font_pos := index_pos + seperation * direction
 		var font_offset := Vector2.ZERO
 
-		var location := _vector2_to_location(index_pos)
+		var location := _vector2_to_location(index_pos, center)
 		match location:
 			TitleRectCache.Location.TOP_LEFT:
 				if one_line:
@@ -168,9 +170,6 @@ func _compute_title_rects() -> void:
 
 		_computed_rect = _computed_rect.merge(rect_cache.rect)
 
-	# Finally offset all the title rects
-	# The encompassing rect will most likely have is position < -Vector2.ZERO
-	# So we need to get the opposite of that
 	# The sum of all the cache positions
 	var cache_position_sum := Vector2.ZERO
 	for c in _cached_title_rects:
