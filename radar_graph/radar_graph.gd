@@ -5,7 +5,6 @@ class_name RadarGraph
 
 ## A highly customizable script that allows you to visualize a radar graph.
 
-# TODO: Github Guide
 
 enum TitleLocation { TOP_LEFT, TOP_CENTER, TOP_RIGHT, CENTER_LEFT, CENTER_RIGHT,
 	BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT, UNKNOWN }
@@ -351,15 +350,15 @@ func _update_title_rect_cache() -> void:
 				if one_line:
 					font_offset = Vector2(-title_size.x, 0)
 				else:
-					font_offset = Vector2(-title_size.x, -first_line_size.y)
+					font_offset = Vector2(-title_size.x, -title_size.y + first_line_size.y)
 			TitleLocation.TOP_CENTER:
 				if one_line:
 					font_offset = Vector2(-title_size.x / 2, 0)
 				else:
-					font_offset = Vector2(-title_size.x / 2, -first_line_size.y)
+					font_offset = Vector2(-title_size.x / 2, -title_size.y + first_line_size.y)
 			TitleLocation.TOP_RIGHT:
 				if not one_line:
-					font_offset = Vector2(0, -first_line_size.y)
+					font_offset = Vector2(0, -title_size.y + first_line_size.y)
 			TitleLocation.CENTER_LEFT:
 				font_offset = Vector2(-title_size.x, (-title_size.y * 0.5) + first_line_size.y)
 			TitleLocation.CENTER_RIGHT:
