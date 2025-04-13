@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://c6ppahgnsf4rd"]
 
-[ext_resource type="Script" path="res://demos/custom_drawing/drop_shadow.gd" id="1_g11c6"]
+[ext_resource type="Script" uid="uid://bdcdnodqausle" path="res://demos/custom_drawing/drop_shadow.gd" id="1_g11c6"]
 
 [node name="CenterContainer" type="CenterContainer"]
 anchors_preset = 15
