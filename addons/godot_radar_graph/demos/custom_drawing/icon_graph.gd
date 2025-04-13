@@ -1,5 +1,5 @@
 @tool
-extends RadarGraph
+extends "res://addons/godot_radar_graph/radar_graph.gd"
 
 # This scripts shows how you can customize the drawing besides using draw_order
 

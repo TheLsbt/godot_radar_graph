@@ -1,5 +1,6 @@
 extends VBoxContainer
 
+const RadarGraph = preload("res://addons/godot_radar_graph/radar_graph.gd")
 const ANIMATION_DURATION := 0.4
 
 @onready var radar_graph: RadarGraph = $RadarGraph

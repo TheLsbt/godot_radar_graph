@@ -1,6 +1,7 @@
 # Godot Radar Graph
 - Godot Radar Graph is a script that allows you to easily draw [Radar Graphs](https://en.wikipedia.org/wiki/Radar_chart) which are highly [customizable](#customize) and also supports animation. See the [installation guide](#installation) to get started.
 
+
 ![banner](assets/banner.png)
 > Replica of the icon created using custom drawing, check out [the code](addons/godot_radar_graph/demos/custom_drawing/icon_graph.gd).
 
@@ -31,5 +32,3 @@ Download the files from the [Godot Asset Library](https://godotengine.org/asset-
 
 ![assets/animated_graph.mp4](assets/animated_graph.gif)
 > Displaying randomizing the values using a Tween. Check out [the code](addons/godot_radar_graph/demos/animation/tween_example.gd).
-
-

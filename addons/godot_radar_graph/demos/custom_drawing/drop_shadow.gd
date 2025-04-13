@@ -1,5 +1,5 @@
 @tool
-extends RadarGraph
+extends "res://addons/godot_radar_graph/radar_graph.gd"
 
 ## Controls the color of the shadow.
 @export var shadow_color := Color.BLACK:
