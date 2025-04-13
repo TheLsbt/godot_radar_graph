@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://detn5loku2ed0"]
 
-[ext_resource type="Script" path="res://demos/custom_drawing/icon_graph.gd" id="1_6n1r3"]
+[ext_resource type="Script" uid="uid://4shq3lfhqie6" path="res://addons/godot_radar_graph/demos/custom_drawing/icon_graph.gd" id="1_6n1r3"]
 
 [node name="CenterContainer" type="CenterContainer"]
 anchors_preset = 15
