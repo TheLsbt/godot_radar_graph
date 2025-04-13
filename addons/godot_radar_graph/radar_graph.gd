@@ -1,7 +1,6 @@
 @tool
 @icon("res://addons/godot_radar_graph/radar_graph_icon.svg")
 extends Control
-class_name RadarGraph
 
 ## A highly customizable script that allows you to visualize a radar graph.
 
