@@ -1,5 +1,5 @@
 @tool
-@icon("res://radar_graph/radar_graph_icon.svg")
+@icon("res://addons/godot_radar_graph/radar_graph_icon.svg")
 extends Control
 class_name RadarGraph
 

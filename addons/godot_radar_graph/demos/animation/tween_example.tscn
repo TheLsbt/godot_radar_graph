@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://5onqaep854j0"]
 
-[ext_resource type="Script" uid="uid://dj2hfa37ymon4" path="res://radar_graph/radar_graph.gd" id="1_4plq8"]
-[ext_resource type="Script" uid="uid://blph27duen1cd" path="res://demos/animation/tween_example.gd" id="1_mfm77"]
+[ext_resource type="Script" uid="uid://dj2hfa37ymon4" path="res://addons/godot_radar_graph/radar_graph.gd" id="1_4plq8"]
+[ext_resource type="Script" uid="uid://blph27duen1cd" path="res://addons/godot_radar_graph/demos/animation/tween_example.gd" id="1_mfm77"]
 
 [node name="TweenExample" type="VBoxContainer"]
 anchors_preset = 15
