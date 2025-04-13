@@ -1,5 +1,18 @@
 # Godot Radar Graph
 - Godot Radar Graph is a script that allows you to easily draw [Radar Graphs](https://en.wikipedia.org/wiki/Radar_chart) which are highly [customizable](#customize) and also supports animation. See the [installation guide](#installation) to get started.
+> [!NOTE]
+> As of 1.1 the addon follows a normal addon structure so you can no longer reference this addon normally.
+  ```gdscript
+  # Extending Godot Radar Graph.
+  extends "res://addons/godot_radar_graph/radar_graph.gd"
+  
+    # Rreferencing withing a script.
+    const RadarGraph := preload("res://addons/godot_radar_graph/radar_graph.gd")
+  
+    # Example use.
+    func foo(graph: RadarGraph) -> void:
+    	pass
+  ```
 
 
 ![banner](assets/banner.png)
