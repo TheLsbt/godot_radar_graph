@@ -5,13 +5,13 @@
   ```gdscript
   # Extending Godot Radar Graph.
   extends "res://addons/godot_radar_graph/radar_graph.gd"
-  
-    # Rreferencing withing a script.
-    const RadarGraph := preload("res://addons/godot_radar_graph/radar_graph.gd")
-  
-    # Example use.
-    func foo(graph: RadarGraph) -> void:
-    	pass
+
+	# Rreferencing withing a script.
+	const RadarGraph := preload("res://addons/godot_radar_graph/radar_graph.gd")
+
+	# Example use.
+	func foo(graph: RadarGraph) -> void:
+		pass
   ```
 
 
