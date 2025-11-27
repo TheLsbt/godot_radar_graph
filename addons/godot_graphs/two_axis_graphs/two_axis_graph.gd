@@ -2,9 +2,23 @@
 extends Control
 
 # TODO: Add a way to pad the step (using a format) or round it
-# TODO:
+# TODO: Add a colorblind mode by implementing a tilling pattern across the bar
 
 ## This script is intented to be used as a base class for graphs with two primary axis.
+
+@export var item_count := 3
+@export var draw_order: PackedStringArray:
+	set(val):
+		draw_order = val
+		queue_redraw()
+
+@export_group("Range")
+@export_range(0, 100, 1, 'or_less', 'or_greater') var min_value: float = 0.0
+@export_range(0, 100, 1, 'or_less', 'or_greater') var max_value := 100.0
+## Snapped according to the folowing code: [codeblock]clampf(snappedf(value, step), min_value, max_value)[/codeblock]
+## See [member Range.step] for more.
+@export var step := 10.0
+@export var rounded := false
 
 @export_group('Style')
 @export_subgroup("Y Axis")
@@ -36,20 +50,12 @@ extends Control
 
 var font := get_theme_font("font")
 
-@export_group("Y Axis", "y_axis")
-@export var y_axis_max_value: float:
-	set(val):
-		y_axis_max_value = val
-		dirty = true
-		queue_redraw()
-
 @export_group('Items')
 @export var item_width: float = 5.0
 ## Minimum spacing around the item
 @export var seperation: float = 2.0
 @export_group('')
-@export var draw_order := PackedStringArray()
-@export var step := 2.0
+
 
 var dirty := true
 
@@ -158,11 +164,11 @@ func _rg_draw_y_axis_text() -> void:
 	var view_rect := get_view_rect()
 	var x_axis := get_x_axis_rect()
 	var y_axis := get_y_axis_rect()
-	for v in range(y_axis_max_value, -1, -step):
-		var string_size := font.get_string_size(str(abs(y_axis_max_value - v)), HORIZONTAL_ALIGNMENT_CENTER)
-		var val := (v / y_axis_max_value) * view_rect.size.y + font.get_descent()
+	for v in range(max_value, -1, -step):
+		var string_size := font.get_string_size(str(abs(max_value - v)), HORIZONTAL_ALIGNMENT_CENTER)
+		var val := (v / max_value) * view_rect.size.y + font.get_descent()
 		font.draw_string(canvas_item, Vector2(y_axis.position.x, val),
-			str(abs(y_axis_max_value - v)), HORIZONTAL_ALIGNMENT_CENTER, y_axis.size.x)
+			str(abs(max_value - v)), HORIZONTAL_ALIGNMENT_CENTER, y_axis.size.x)
 
 
 func _rg_draw_bars() -> void:
@@ -184,7 +190,7 @@ func _rg_draw_bars() -> void:
 		var x: float = spacing + i * (item_width + spacing)
 		var pos = Vector2(x + y_axis.end.x, x_axis.position.y + font.get_ascent())
 
-		var percent := value / y_axis_max_value
+		var percent := value / max_value
 		var rect := Rect2(Vector2(pos.x, 0), Vector2(item_width, size.y - _biggset_title_vector.y))
 		rect.position.y = percent * view_rect.size.y
 
@@ -203,8 +209,8 @@ func _rg_draw_grid() -> void:
 	var y_axis := get_y_axis_rect()
 
 	# Gather the horizontal grid lines
-	for v in range(y_axis_max_value, -1, -step):
-		var val := (v / y_axis_max_value) * view_rect.size.y
+	for v in range(max_value, -1, -step):
+		var val := (v / max_value) * view_rect.size.y
 		grid.append_array([Vector2(y_axis.end.x, val), Vector2(x_axis.end.x, val)])
 
 	# Gather the vertical grid lines
@@ -251,7 +257,7 @@ func get_y_axis_rect() -> Rect2:
 	_cache()
 	return Rect2(
 		Vector2.ZERO,
-		Vector2(font.get_string_size(str(y_axis_max_value)).x, size.y - _biggset_title_vector.y)
+		Vector2(font.get_string_size(str(max_value)).x, size.y - _biggset_title_vector.y)
 		)
 
 func get_x_axis_rect() -> Rect2:
@@ -277,3 +283,20 @@ func _get_minimum_size() -> Vector2:
 	_cache()
 	var minimum_width := (items.size() * (item_width + seperation)) + get_y_axis_rect().size.x
 	return Vector2(minimum_width, _biggset_title_vector.y)
+
+
+func set_item_value(item: int, value: float) -> void:
+	if item < 0 or item > items.size():
+		return
+	items[item].value = clampf(snappedf(value, step), min_value, max_value)
+	if rounded:
+		items[item].value = roundf(items[item].value)
+	queue_redraw()
+
+
+func set_item_title(item: int, title: String) -> void:
+	if item < 0 or item > items.size():
+		return
+	items[item].title = title
+	dirty = true
+	queue_redraw()
