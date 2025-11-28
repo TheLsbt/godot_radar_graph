@@ -2,11 +2,10 @@
 extends Control
 
 
-# FIXME: Fix the isue where the grid disapears when step is < 1
-# TODO: Make a option for a cosmetic step seperate from the normal step
 # TODO: When step is changed make all the values reflect that
 # TODO: Add a way to pad the step (using a format) or round it
 # TODO: Add a colorblind mode by implementing a tilling pattern across the bar
+# TODO: Implement all the callbacks on each property
 
 ## This script is intented to be used as a base class for graphs with two primary axis.
 
@@ -22,6 +21,7 @@ extends Control
 ## Snapped according to the folowing code: [codeblock]clampf(snappedf(value, step), min_value, max_value)[/codeblock]
 ## See [member Range.step] for more.
 @export var step := 10.0
+@export var cosmetic_step := 5.0
 @export var rounded := false
 
 @export_group('Style')
@@ -205,7 +205,7 @@ func _rg_draw_y_axis_text() -> void:
 			HORIZONTAL_ALIGNMENT_CENTER, y_axis.size.x, y_axis_font_size)
 		y_axis_font.draw_string(canvas_item, Vector2(y_axis.position.x, val),
 			str(abs(max_value - v)), HORIZONTAL_ALIGNMENT_CENTER, y_axis.size.x, y_axis_font_size)
-		v -= step
+		v -= cosmetic_step
 
 
 func _rg_draw_bars() -> void:

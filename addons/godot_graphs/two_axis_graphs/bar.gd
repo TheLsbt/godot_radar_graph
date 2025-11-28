@@ -26,7 +26,7 @@ func get_y_axis_steps() -> PackedFloat32Array:
 	var v := max_value
 	while v > min_value:
 		steps.append((v / max_value) * view_rect.size.y)
-		v -= step
+		v -= cosmetic_step
 	return steps
 
 
