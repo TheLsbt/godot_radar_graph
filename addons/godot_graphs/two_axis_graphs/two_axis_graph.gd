@@ -1,6 +1,9 @@
 @tool
 extends Control
 
+
+# FIXME: Fix the isue where the grid disapears when step is < 1
+# TODO: Make a option for step to only be cosmetic
 # TODO: Add a way to pad the step (using a format) or round it
 # TODO: Add a colorblind mode by implementing a tilling pattern across the bar
 
@@ -33,6 +36,21 @@ extends Control
 		if val:
 			y_axis_style_box.changed.connect(_on_axis_stylebox_changed)
 		queue_redraw()
+@export var y_axis_font: Font:
+	set(val):
+		y_axis_font = val
+		dirty = true
+		queue_redraw()
+	get:
+		if not y_axis_font:
+			return ThemeDB.fallback_font
+		return y_axis_font
+@export var y_axis_font_size := 16:
+	set(val):
+		y_axis_font_size = val
+		dirty = true
+		queue_redraw()
+
 @export_subgroup('X Axis')
 ## See [member y_axis_style_box].
 @export var x_axis_style_box: StyleBox:
@@ -43,12 +61,25 @@ extends Control
 		if val:
 			x_axis_style_box.changed.connect(_on_axis_stylebox_changed)
 		queue_redraw()
+@export var x_axis_font: Font:
+	set(val):
+		x_axis_font = val
+		dirty = true
+		queue_redraw()
+	get:
+		if not x_axis_font:
+			return ThemeDB.fallback_font
+		return x_axis_font
+@export var x_axis_font_size := 16:
+	set(val):
+		x_axis_font_size = val
+		dirty = true
+		queue_redraw()
+
 @export_group('Grid')
 @export var draw_grid := false
 @export var grid_width := 1.0
 @export var grid_color := Color.WHITE
-
-var font := get_theme_font("font")
 
 @export_group('Items')
 @export var item_width: float = 5.0
@@ -64,7 +95,7 @@ func _on_axis_stylebox_changed() -> void:
 	queue_redraw()
 
 
-var items := [
+@export_storage var items := [
 		{
 			"title": "My awesome\nitem 1",
 			"value": 2,
@@ -110,6 +141,7 @@ func get_clean_draw_order() -> PackedStringArray:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAW:
+		_cache()
 		for i in draw_order:
 			var method := &"_rg_draw_%s" % i
 			if has_method(method):
@@ -145,8 +177,9 @@ func _rg_draw_x_axis_text() -> void:
 	for i in items.size():
 		var title: String = items[i].title
 		var x: float = spacing + i * (item_width + spacing)
-		var pos = Vector2(x + y_axis.end.x, x_axis.position.y + font.get_ascent())
-		font.draw_multiline_string(canvas_item, pos, title, HORIZONTAL_ALIGNMENT_CENTER, item_width)
+		var pos = Vector2(x + y_axis.end.x, x_axis.position.y + x_axis_font.get_ascent(x_axis_font_size))
+		x_axis_font.draw_multiline_string(canvas_item, pos, title, HORIZONTAL_ALIGNMENT_CENTER,
+			item_width, x_axis_font_size)
 
 
 func _rg_draw_y_axis() -> void:
@@ -165,10 +198,11 @@ func _rg_draw_y_axis_text() -> void:
 	var x_axis := get_x_axis_rect()
 	var y_axis := get_y_axis_rect()
 	for v in range(max_value, -1, -step):
-		var string_size := font.get_string_size(str(abs(max_value - v)), HORIZONTAL_ALIGNMENT_CENTER)
-		var val := (v / max_value) * view_rect.size.y + font.get_descent()
-		font.draw_string(canvas_item, Vector2(y_axis.position.x, val),
-			str(abs(max_value - v)), HORIZONTAL_ALIGNMENT_CENTER, y_axis.size.x)
+		var string_size := y_axis_font.get_string_size(str(abs(max_value - v)),
+			HORIZONTAL_ALIGNMENT_CENTER, y_axis.size.x, y_axis_font_size)
+		var val := (v / max_value) * view_rect.size.y + y_axis_font.get_descent(y_axis_font_size)
+		y_axis_font.draw_string(canvas_item, Vector2(y_axis.position.x, val),
+			str(abs(max_value - v)), HORIZONTAL_ALIGNMENT_CENTER, y_axis.size.x, y_axis_font_size)
 
 
 func _rg_draw_bars() -> void:
@@ -188,7 +222,7 @@ func _rg_draw_bars() -> void:
 		var color: Color = item.color
 
 		var x: float = spacing + i * (item_width + spacing)
-		var pos = Vector2(x + y_axis.end.x, x_axis.position.y + font.get_ascent())
+		var pos = Vector2(x + y_axis.end.x, x_axis.position.y + x_axis_font.get_ascent())
 
 		var percent := value / max_value
 		var rect := Rect2(Vector2(pos.x, 0), Vector2(item_width, size.y - _biggset_title_vector.y))
@@ -196,39 +230,36 @@ func _rg_draw_bars() -> void:
 
 		# This is the actual bar
 		var r := Rect2(
-			Vector2(pos.x + item_width, get_view_rect().end.y),
-			Vector2(-item_width, -percent * get_view_rect().size.y)
+			Vector2(pos.x + item_width, view_rect.end.y),
+			Vector2(-item_width, -percent * view_rect.size.y)
 		).abs()
 		draw_rect(r, color)
 
 
 func _rg_draw_grid() -> void:
+	if not draw_grid:
+		return
+
 	var grid: PackedVector2Array = []
 	var view_rect := get_view_rect()
 	var x_axis := get_x_axis_rect()
 	var y_axis := get_y_axis_rect()
 
-	# Gather the horizontal grid lines
-	for v in range(max_value, -1, -step):
-		var val := (v / max_value) * view_rect.size.y
-		grid.append_array([Vector2(y_axis.end.x, val), Vector2(x_axis.end.x, val)])
+	var x_steps := get_x_axis_steps()
+	var y_steps := get_y_axis_steps()
 
-	# Gather the vertical grid lines
-	var total_items_width := items.size() * item_width
-	var spacing = (view_rect.size.x - total_items_width) / (items.size() + 1)
+	for i in y_steps:
+		grid.append_array([Vector2(y_axis.end.x, i), Vector2(x_axis.end.x, i)])
+	for i in x_steps:
+		grid.append_array([Vector2(i, view_rect.position.y), Vector2(i, view_rect.end.y)])
 
-	for i in items.size():
-		var x: float = spacing + i * (item_width + spacing)
-		var center :=  (x + item_width / 2) + y_axis.end.x
-		grid.append_array([Vector2(center, view_rect.position.y), Vector2(center, view_rect.end.y)])
-
-	if draw_grid:
+	if grid.size() > 1:
 		draw_multiline(grid, grid_color, grid_width)
 
 
 func get_line_size(text: String, line: int, width := -1) -> Vector2:
 	var string := text.get_slice('\n', line)
-	return font.get_string_size(string, 0, width)
+	return x_axis_font.get_string_size(string, 0, width, x_axis_font_size)
 
 
 var _item_metadata: Array[Dictionary] = []
@@ -242,7 +273,8 @@ func _cache() -> void:
 	# Calculate the rects of each titles
 	for i in items:
 		var title: String = i.title
-		var title_size := font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_CENTER, item_width)
+		var title_size := x_axis_font.get_multiline_string_size(title,
+			HORIZONTAL_ALIGNMENT_CENTER, item_width, x_axis_font_size)
 		var data := {
 			'title_size': title_size
 		}
@@ -257,7 +289,9 @@ func get_y_axis_rect() -> Rect2:
 	_cache()
 	return Rect2(
 		Vector2.ZERO,
-		Vector2(font.get_string_size(str(max_value)).x, size.y - _biggset_title_vector.y)
+		Vector2(y_axis_font.get_string_size(
+			str(max_value), HORIZONTAL_ALIGNMENT_CENTER, -1, y_axis_font_size).x,
+			size.y - _biggset_title_vector.y)
 		)
 
 func get_x_axis_rect() -> Rect2:
@@ -279,19 +313,32 @@ func get_view_rect() -> Rect2:
 	return rect
 
 
+## [b][color=LIGHT_GREEN](Should Override)[/color][/b]
+## Gets the steps for the x axis, this should only return floats of the "x" component.
+func get_x_axis_steps() -> PackedFloat32Array:
+	return []
+
+
+## [b][color=LIGHT_GREEN](Should Override)[/color][/b]
+## Gets the steps for the y axis, this should only return floats of the "y" component.
+func get_y_axis_steps() -> PackedFloat32Array:
+	return []
+
+
 func _get_minimum_size() -> Vector2:
 	_cache()
 	var minimum_width := (items.size() * (item_width + seperation)) + get_y_axis_rect().size.x
 	return Vector2(minimum_width, _biggset_title_vector.y)
 
 
-func set_item_value(item: int, value: float) -> void:
+func set_item_value(item: int, value: float) -> float:
 	if item < 0 or item > items.size():
-		return
+		return value
 	items[item].value = clampf(snappedf(value, step), min_value, max_value)
 	if rounded:
 		items[item].value = roundf(items[item].value)
 	queue_redraw()
+	return items[item].value
 
 
 func set_item_title(item: int, title: String) -> void:
@@ -300,3 +347,57 @@ func set_item_title(item: int, title: String) -> void:
 	items[item].title = title
 	dirty = true
 	queue_redraw()
+
+
+#region Custom Property Management
+func get_item_template() -> Dictionary[String, Dictionary]:
+	return {}
+
+
+func _get_property_list() -> Array[Dictionary]:
+	var template := get_item_template()
+	var properties: Array[Dictionary] = []
+
+	for i in item_count:
+		for template_name in template.keys():
+			properties.append({
+				"name": "items/%d/%s" % [i, template_name],
+				"type": template[template_name].get("type", TYPE_NIL)
+			})
+
+	return properties
+
+
+func _get(path: StringName) -> Variant:
+	if not path.begins_with("items") or path.count("/") != 2:
+		return null
+
+	var item: int = int(path.get_slice("/", 1))
+	var property: String = path.get_slice("/", 2)
+
+	return items[item].get(property, null)
+
+
+func _set(path: StringName, value: Variant) -> bool:
+	if not path.begins_with("items") or path.count("/") != 2:
+		return false
+
+	var item: int = int(path.get_slice("/", 1))
+	var property: String = path.get_slice("/", 2)
+
+	var template := get_item_template()
+
+	var function: Callable = template.get(property, {}).get('func', func(_i, v: Variant): return v)
+
+	items[item][property] = function.call(item, value)
+	#items[item][property] = value
+
+	if template.get(property, {}).get('dirty_when_set', false):
+		dirty = true
+	if template.get(property, {}).get('redraw_when_set', false):
+		queue_redraw()
+
+
+	return true
+
+#endregion
