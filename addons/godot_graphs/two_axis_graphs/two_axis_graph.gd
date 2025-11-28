@@ -3,7 +3,8 @@ extends Control
 
 
 # FIXME: Fix the isue where the grid disapears when step is < 1
-# TODO: Make a option for step to only be cosmetic
+# TODO: Make a option for a cosmetic step seperate from the normal step
+# TODO: When step is changed make all the values reflect that
 # TODO: Add a way to pad the step (using a format) or round it
 # TODO: Add a colorblind mode by implementing a tilling pattern across the bar
 
@@ -197,12 +198,14 @@ func _rg_draw_y_axis_text() -> void:
 	var view_rect := get_view_rect()
 	var x_axis := get_x_axis_rect()
 	var y_axis := get_y_axis_rect()
-	for v in range(max_value, -1, -step):
+	var v := max_value
+	while v > min_value:
+		var val = (v / max_value) * view_rect.size.y + y_axis_font.get_descent(y_axis_font_size)
 		var string_size := y_axis_font.get_string_size(str(abs(max_value - v)),
 			HORIZONTAL_ALIGNMENT_CENTER, y_axis.size.x, y_axis_font_size)
-		var val := (v / max_value) * view_rect.size.y + y_axis_font.get_descent(y_axis_font_size)
 		y_axis_font.draw_string(canvas_item, Vector2(y_axis.position.x, val),
 			str(abs(max_value - v)), HORIZONTAL_ALIGNMENT_CENTER, y_axis.size.x, y_axis_font_size)
+		v -= step
 
 
 func _rg_draw_bars() -> void:

@@ -23,9 +23,10 @@ func get_y_axis_steps() -> PackedFloat32Array:
 	_cache()
 	var view_rect := get_view_rect()
 	var steps: PackedFloat32Array = []
-	for v in range(max_value, -1, -step):
-		var val := (v / max_value) * view_rect.size.y
-		steps.append(val)
+	var v := max_value
+	while v > min_value:
+		steps.append((v / max_value) * view_rect.size.y)
+		v -= step
 	return steps
 
 
