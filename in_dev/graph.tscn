@@ -944,8 +944,10 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_0yd24")
 draw_order = PackedStringArray("x_axis_text", "y_axis_text", "grid", "view_rect", "bars")
-max_value = 20.0
-step = 2.555
+min_value = 1.0
+max_value = 2.0
+step = 0.0
+cosmetic_step = 0.5
 y_axis_style_box = SubResource("StyleBoxFlat_c2031")
 y_axis_font = SubResource("FontFile_msdd5")
 y_axis_font_size = 10
@@ -955,36 +957,28 @@ draw_grid = true
 grid_color = Color(0.6223959, 0.6223959, 0.6223959, 1)
 item_width = 80.0
 seperation = 10.0
-items = [{
-"color": Color(0.8776042, 0.54164636, 0.60030574, 1),
-"title": "My awesome
-item 1",
-"value": 2.555
+items = Array[Dictionary]([{
+"color": Color(1, 0, 0, 1),
+"title": "Red",
+"value": 1.0
 }, {
-"color": Color(0.9088542, 0.22958037, 0.3481839, 1),
-"title": "Help Me please bro im s",
-"value": 7.665000000000001
+"color": Color(0, 1, 0, 1),
+"title": "Green",
+"value": 1.465
 }, {
-"color": Color(1, 0.7529412, 0.79607844, 1),
-"title": "My awesome
-item 3",
-"value": 2.0
-}, {
-"color": Color(1, 0.7529412, 0.79607844, 1),
-"title": "More...",
-"value": 1
-}]
-items/0/title = "My awesome
-item 1"
-items/0/color = Color(0.8776042, 0.54164636, 0.60030574, 1)
-items/0/value = 2.555
-items/1/title = "Help Me please bro im s"
-items/1/color = Color(0.9088542, 0.22958037, 0.3481839, 1)
-items/1/value = 7.665000000000001
-items/2/title = "My awesome
-item 3"
-items/2/color = Color(1, 0.7529412, 0.79607844, 1)
-items/2/value = 2.0
+"color": Color(0, 0, 1, 1),
+"title": "Blue",
+"value": 1.915
+}])
+items/0/title = "Red"
+items/0/value = 1.0
+items/0/color = Color(1, 0, 0, 1)
+items/1/title = "Green"
+items/1/value = 1.465
+items/1/color = Color(0, 1, 0, 1)
+items/2/title = "Blue"
+items/2/value = 1.915
+items/2/color = Color(0, 0, 1, 1)
 
 [node name="Control" type="Control" parent="."]
 anchors_preset = 0

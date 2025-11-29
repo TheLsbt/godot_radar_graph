@@ -2,14 +2,32 @@
 extends Control
 
 
-# TODO: When step is changed make all the values reflect that
+# TODO: When step and round is changed make all the values reflect that
 # TODO: Add a way to pad the step (using a format) or round it
 # TODO: Add a colorblind mode by implementing a tilling pattern across the bar
 # TODO: Implement all the callbacks on each property
 
 ## This script is intented to be used as a base class for graphs with two primary axis.
 
-@export var item_count := 3
+@export var item_count := 3:
+	set(val):
+		var _changed = false
+		if val < item_count:
+			items.resize(val)
+			_changed = true
+		elif val > item_count:
+			var a = []
+			a.resize(val - item_count)
+			# TODO: Make this data driven
+			a.fill({"value": 0.0, "color": Color.BLACK, "title": ""})
+			items.append_array(a)
+			_changed = true
+		if _changed:
+			notify_property_list_changed()
+			dirty = true
+			queue_redraw()
+		item_count = val
+
 @export var draw_order: PackedStringArray:
 	set(val):
 		draw_order = val
@@ -96,44 +114,11 @@ func _on_axis_stylebox_changed() -> void:
 	queue_redraw()
 
 
-@export_storage var items := [
-		{
-			"title": "My awesome\nitem 1",
-			"value": 2,
-			"color": Color.PINK,
-		},
-		{
-			"title": "My awesome\nitem 2",
-			"value": 5,
-			"color": Color.PINK,
-		},
-		{
-			"title": "My awesome\nitem 3",
-			"value": 8,
-			"color": Color.PINK,
-		},
-		{
-			"title": "More...",
-			"value": 1,
-			"color": Color.PINK,
-		}
-	]
+@export_storage var items: Array[Dictionary] = []
 
 
 func _init() -> void:
 	item_rect_changed.connect(func(): dirty = true; queue_redraw())
-
-
-func _property_can_revert(property: StringName) -> bool:
-	if property == &'draw_order':
-		return draw_order != get_clean_draw_order()
-	return false
-
-
-func _property_get_revert(property: StringName) -> Variant:
-	if property == &'draw_order':
-		return get_clean_draw_order()
-	return null
 
 
 func get_clean_draw_order() -> PackedStringArray:
@@ -227,7 +212,8 @@ func _rg_draw_bars() -> void:
 		var x: float = spacing + i * (item_width + spacing)
 		var pos = Vector2(x + y_axis.end.x, x_axis.position.y + x_axis_font.get_ascent())
 
-		var percent := value / max_value
+		var percent := (value - min_value) / max_value
+
 		var rect := Rect2(Vector2(pos.x, 0), Vector2(item_width, size.y - _biggset_title_vector.y))
 		rect.position.y = percent * view_rect.size.y
 
@@ -353,22 +339,23 @@ func set_item_title(item: int, title: String) -> void:
 
 
 #region Custom Property Management
-func get_item_template() -> Dictionary[String, Dictionary]:
-	return {}
-
-
 func _get_property_list() -> Array[Dictionary]:
-	var template := get_item_template()
-	var properties: Array[Dictionary] = []
+	var formatter := func (property: Dictionary, item: int) -> Dictionary:
+		property.merge({"name": "items/%d/%s" % [ item, property.get("name", "") ]}, true)
+		return property
+
+	var list: Array[Dictionary] = []
 
 	for i in item_count:
-		for template_name in template.keys():
-			properties.append({
-				"name": "items/%d/%s" % [i, template_name],
-				"type": template[template_name].get("type", TYPE_NIL)
-			})
+		var properties := get_item_properties().map(formatter.bind(i))
+		list.append_array(properties)
 
-	return properties
+	return list
+
+
+## Override when dealing with items. See [method Object._get_property_list].
+func get_item_properties() -> Array[Dictionary]:
+	return []
 
 
 func _get(path: StringName) -> Variant:
@@ -378,7 +365,12 @@ func _get(path: StringName) -> Variant:
 	var item: int = int(path.get_slice("/", 1))
 	var property: String = path.get_slice("/", 2)
 
-	return items[item].get(property, null)
+	return item_get(item, property)
+
+
+## Override when dealing with items. See [method Object._get].
+func item_get(item: int, property: String) -> Variant:
+	return null
 
 
 func _set(path: StringName, value: Variant) -> bool:
@@ -388,19 +380,47 @@ func _set(path: StringName, value: Variant) -> bool:
 	var item: int = int(path.get_slice("/", 1))
 	var property: String = path.get_slice("/", 2)
 
-	var template := get_item_template()
-
-	var function: Callable = template.get(property, {}).get('func', func(_i, v: Variant): return v)
-
-	items[item][property] = function.call(item, value)
-	#items[item][property] = value
-
-	if template.get(property, {}).get('dirty_when_set', false):
-		dirty = true
-	if template.get(property, {}).get('redraw_when_set', false):
-		queue_redraw()
+	return item_set(item, property, value)
 
 
+## Override when dealing with items. See [method Object._set].
+func item_set(item: int, property: String, value: Variant) -> bool:
 	return true
+
+
+func _property_can_revert(path: StringName) -> bool:
+	if path == &'draw_order':
+		return draw_order != get_clean_draw_order()
+
+	if not path.begins_with("items") or path.count("/") != 2:
+		return false
+
+	var item: int = int(path.get_slice("/", 1))
+	var property: String = path.get_slice("/", 2)
+
+	return item_property_can_revert(item, property)
+
+
+## Override when dealing with items. See [method Object.property_can_revert].
+func item_property_can_revert(item: int, property: String) -> bool:
+	return false
+
+
+func _property_get_revert(path: StringName) -> Variant:
+	if path == &'draw_order':
+		return get_clean_draw_order()
+
+	if not path.begins_with("items") or path.count("/") != 2:
+		return false
+
+	var item: int = int(path.get_slice("/", 1))
+	var property: String = path.get_slice("/", 2)
+
+	return item_property_get_revert(item, property)
+
+
+## Override when dealing with items. See [method Object.property_get_revert].
+func item_property_get_revert(item: int, property: String) -> Variant:
+	return null
 
 #endregion
