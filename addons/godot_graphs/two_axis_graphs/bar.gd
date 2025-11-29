@@ -84,7 +84,7 @@ func item_property_can_revert(item: int, property: String) -> bool:
 	var current := get("items/%d/%s" % [ item, property ])
 	match property:
 		"title": return current != ""
-		"value": return current != 0.0
+		"value": return current != min_value
 		"color": return current != Color.BLACK
 
 	return false
@@ -96,7 +96,7 @@ func item_property_get_revert(item: int, property: String) -> Variant:
 
 	match property:
 		"title": return ""
-		"value": return 0.0
+		"value": return min_value
 		"color": return Color.BLACK
 
 	return null
