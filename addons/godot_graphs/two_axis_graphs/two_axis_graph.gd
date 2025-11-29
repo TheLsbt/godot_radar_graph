@@ -320,24 +320,6 @@ func _get_minimum_size() -> Vector2:
 	return Vector2(minimum_width, _biggset_title_vector.y)
 
 
-func set_item_value(item: int, value: float) -> float:
-	if item < 0 or item > items.size():
-		return value
-	items[item].value = clampf(snappedf(value, step), min_value, max_value)
-	if rounded:
-		items[item].value = roundf(items[item].value)
-	queue_redraw()
-	return items[item].value
-
-
-func set_item_title(item: int, title: String) -> void:
-	if item < 0 or item > items.size():
-		return
-	items[item].title = title
-	dirty = true
-	queue_redraw()
-
-
 #region Custom Property Management
 func _get_property_list() -> Array[Dictionary]:
 	var formatter := func (property: Dictionary, item: int) -> Dictionary:
@@ -345,10 +327,10 @@ func _get_property_list() -> Array[Dictionary]:
 		return property
 
 	var list: Array[Dictionary] = []
-
+	var properties = get_item_properties()
 	for i in item_count:
-		var properties := get_item_properties().map(formatter.bind(i))
-		list.append_array(properties)
+		properties = properties.map(formatter.bind(i))
+		list.append_array(properties.duplicate(true))
 
 	return list
 

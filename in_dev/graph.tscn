@@ -973,12 +973,12 @@ items = Array[Dictionary]([{
 items/0/title = "Red"
 items/0/value = 1.0
 items/0/color = Color(1, 0, 0, 1)
-items/1/title = "Green"
-items/1/value = 1.465
-items/1/color = Color(0, 1, 0, 1)
-items/2/title = "Blue"
-items/2/value = 1.915
-items/2/color = Color(0, 0, 1, 1)
+items/1/items/0/title = null
+items/1/items/0/value = null
+items/1/items/0/color = null
+items/2/items/1/items/0/title = null
+items/2/items/1/items/0/value = null
+items/2/items/1/items/0/color = null
 
 [node name="Control" type="Control" parent="."]
 anchors_preset = 0

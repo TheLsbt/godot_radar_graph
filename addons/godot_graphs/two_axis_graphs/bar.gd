@@ -30,6 +30,32 @@ func get_y_axis_steps() -> PackedFloat32Array:
 	return steps
 
 
+func set_item_title(item: int, title: String) -> void:
+	if item < 0 or item > items.size():
+		return
+	items[item].title = title
+	dirty = true
+	queue_redraw()
+
+
+func set_item_value(item: int, value: float) -> float:
+	if item < 0 or item > items.size():
+		return value
+	items[item].value = clampf(snappedf(value, step), min_value, max_value)
+	if rounded:
+		items[item].value = roundf(items[item].value)
+	queue_redraw()
+	return items[item].value
+
+
+func set_item_bar_color(item: int, color: Color) -> void:
+	if item < 0 or item > items.size():
+		printerr("Out of bounds, cannot set color for item: ", item)
+		return
+	items[item]["color"] = color
+	queue_redraw()
+
+
 func get_item_properties() -> Array[Dictionary]:
 	return [{
 			"name": "title",
@@ -69,14 +95,6 @@ func item_set(item: int, property: String, value: Variant) -> bool:
 	return false
 
 
-func set_item_bar_color(item: int, color: Color) -> void:
-	if item < 0 or item > items.size():
-		printerr("Out of bounds, cannot set color for item: ", item)
-		return
-	items[item]["color"] = color
-	queue_redraw()
-
-
 func item_property_can_revert(item: int, property: String) -> bool:
 	if item < 0 or item > items.size() or not property in items[item]:
 		return false
@@ -84,7 +102,7 @@ func item_property_can_revert(item: int, property: String) -> bool:
 	var current := get("items/%d/%s" % [ item, property ])
 	match property:
 		"title": return current != ""
-		"value": return current != min_value
+		"value": return is_equal_approx(current, min_value)
 		"color": return current != Color.BLACK
 
 	return false
