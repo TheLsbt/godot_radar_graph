@@ -1,3 +1,4 @@
+@abstract
 @tool
 extends "./base_graph.gd"
 
@@ -151,16 +152,10 @@ func _rg_draw_grid() -> void:
 		draw_multiline(grid, grid_color, grid_width)
 
 
-var _item_metadata: Array[Dictionary] = []
-var _biggset_title_vector := Vector2.ZERO
-
-## Implement
-func get_y_axis_rect() -> Rect2:
-	return Rect2()
+@abstract func get_y_axis_rect() -> Rect2
 
 
-func get_x_axis_rect() -> Rect2:
-	return Rect2()
+@abstract func get_x_axis_rect() -> Rect2
 
 
 func get_view_rect() -> Rect2:
@@ -172,17 +167,12 @@ func get_view_rect() -> Rect2:
 	return rect
 
 
-## [b][color=LIGHT_GREEN](Should Override)[/color][/b]
 ## Gets the steps for the x axis, this should only return floats of the "x" component.
-func get_x_axis_steps() -> PackedFloat32Array:
-	return []
+@abstract func get_x_axis_steps() -> PackedFloat32Array
 
 
-## [b][color=LIGHT_GREEN](Should Override)[/color][/b]
 ## Gets the steps for the y axis, this should only return floats of the "y" component.
-func get_y_axis_steps() -> PackedFloat32Array:
-	return []
-
+@abstract func get_y_axis_steps() -> PackedFloat32Array
 
 
 func _try_fix_values() -> void:

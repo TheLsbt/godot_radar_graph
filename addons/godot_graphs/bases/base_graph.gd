@@ -1,3 +1,4 @@
+@abstract
 @tool
 extends Control
 
@@ -15,8 +16,7 @@ extends Control
 var dirty: bool = false
 
 
-func get_default_draw_order() -> PackedStringArray:
-	return []
+@abstract func get_default_draw_order() -> PackedStringArray
 
 
 #region Private
@@ -69,8 +69,7 @@ func _get_property_list() -> Array[Dictionary]:
 
 
 ## Override when dealing with items. See [method Object._get_property_list].
-func get_item_properties() -> Array[Dictionary]:
-	return []
+@abstract func get_item_properties() -> Array[Dictionary]
 
 
 func _get(path: StringName) -> Variant:
@@ -84,8 +83,7 @@ func _get(path: StringName) -> Variant:
 
 
 ## Override when dealing with items. See [method Object._get].
-func item_get(item: int, property: String) -> Variant:
-	return null
+@abstract func item_get(item: int, property: String) -> Variant
 
 
 func _set(path: StringName, value: Variant) -> bool:
@@ -99,8 +97,7 @@ func _set(path: StringName, value: Variant) -> bool:
 
 
 ## Override when dealing with items. See [method Object._set].
-func item_set(item: int, property: String, value: Variant) -> bool:
-	return true
+@abstract func item_set(item: int, property: String, value: Variant) -> bool
 
 
 func _property_can_revert(path: StringName) -> bool:
@@ -117,8 +114,7 @@ func _property_can_revert(path: StringName) -> bool:
 
 
 ## Override when dealing with items. See [method Object.property_can_revert].
-func item_property_can_revert(item: int, property: String) -> bool:
-	return false
+@abstract func item_property_can_revert(item: int, property: String) -> bool
 
 
 func _property_get_revert(path: StringName) -> Variant:

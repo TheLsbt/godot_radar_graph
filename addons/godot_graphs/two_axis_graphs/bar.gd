@@ -46,6 +46,9 @@ extends "../bases/two_axis_graph.gd"
 		dirty = true
 		queue_redraw()
 
+var _item_metadata: Array[Dictionary] = []
+var _biggset_title_vector := Vector2.ZERO
+
 
 func get_default_draw_order() -> PackedStringArray:
 	return ["x_axis", "x_axis_text", "y_axis", "y_axis_text", "view_rect", "grid", "bars"]
