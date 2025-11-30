@@ -1,5 +1,5 @@
 @tool
-extends Control
+extends "./base_graph.gd"
 
 
 # TODO: When step and round is changed make all the values reflect that
@@ -8,30 +8,6 @@ extends Control
 # TODO: Implement all the callbacks on each property
 
 ## This script is intented to be used as a base class for graphs with two primary axis.
-
-@export var item_count := 3:
-	set(val):
-		var _changed = false
-		if val < item_count:
-			items.resize(val)
-			_changed = true
-		elif val > item_count:
-			var a = []
-			a.resize(val - item_count)
-			# TODO: Make this data driven
-			a.fill({"value": 0.0, "color": Color.BLACK, "title": ""})
-			items.append_array(a)
-			_changed = true
-		if _changed:
-			notify_property_list_changed()
-			dirty = true
-			queue_redraw()
-		item_count = val
-
-@export var draw_order: PackedStringArray:
-	set(val):
-		draw_order = val
-		queue_redraw()
 
 @export_group("Range")
 @export_range(0, 100, 1, 'or_less', 'or_greater') var min_value: float = 0.0
@@ -107,14 +83,8 @@ extends Control
 @export_group('')
 
 
-var dirty := true
-
-
 func _on_axis_stylebox_changed() -> void:
 	queue_redraw()
-
-
-@export_storage var items: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -123,15 +93,6 @@ func _init() -> void:
 
 func get_clean_draw_order() -> PackedStringArray:
 	return ['x_axis', 'x_axis_text', 'y_axis', 'y_axis_text', 'grid', 'view_rect', 'bars']
-
-
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_DRAW:
-		_cache()
-		for i in draw_order:
-			var method := &"_rg_draw_%s" % i
-			if has_method(method):
-				call(method)
 
 
 func _rg_draw_view_rect() -> void:
@@ -156,12 +117,12 @@ func _rg_draw_x_axis_text() -> void:
 	var x_axis := get_x_axis_rect()
 	var y_axis := get_y_axis_rect()
 
-	var total_items_width := items.size() * item_width
-	var spacing = (view_rect.size.x - total_items_width) / (items.size() + 1)
+	var total_items_width := _items.size() * item_width
+	var spacing = (view_rect.size.x - total_items_width) / (_items.size() + 1)
 
 	# Draw the titles along the x-axis
-	for i in items.size():
-		var title: String = items[i].title
+	for i in _items.size():
+		var title: String = _items[i].title
 		var x: float = spacing + i * (item_width + spacing)
 		var pos = Vector2(x + y_axis.end.x, x_axis.position.y + x_axis_font.get_ascent(x_axis_font_size))
 		x_axis_font.draw_multiline_string(canvas_item, pos, title, HORIZONTAL_ALIGNMENT_CENTER,
@@ -196,15 +157,15 @@ func _rg_draw_y_axis_text() -> void:
 func _rg_draw_bars() -> void:
 	var view_rect := get_view_rect()
 
-	var total_items_width := items.size() * item_width
-	var spacing = (view_rect.size.x - total_items_width) / (items.size() + 1)
+	var total_items_width := _items.size() * item_width
+	var spacing = (view_rect.size.x - total_items_width) / (_items.size() + 1)
 
 	var x_axis := get_x_axis_rect()
 	var y_axis := get_y_axis_rect()
 	var canvas_item := get_canvas_item()
 
-	for i in items.size():
-		var item: Dictionary = items[i]
+	for i in _items.size():
+		var item: Dictionary = _items[i]
 		var title: String = item.title
 		var value: float = item.value
 		var color: Color = item.color
@@ -260,7 +221,7 @@ func _cache() -> void:
 		return
 
 	# Calculate the rects of each titles
-	for i in items:
+	for i in _items:
 		var title: String = i.title
 		var title_size := x_axis_font.get_multiline_string_size(title,
 			HORIZONTAL_ALIGNMENT_CENTER, item_width, x_axis_font_size)
@@ -316,93 +277,5 @@ func get_y_axis_steps() -> PackedFloat32Array:
 
 func _get_minimum_size() -> Vector2:
 	_cache()
-	var minimum_width := (items.size() * (item_width + seperation)) + get_y_axis_rect().size.x
+	var minimum_width := (_items.size() * (item_width + seperation)) + get_y_axis_rect().size.x
 	return Vector2(minimum_width, _biggset_title_vector.y)
-
-
-#region Custom Property Management
-func _get_property_list() -> Array[Dictionary]:
-	var formatter := func (property: Dictionary, item: int) -> Dictionary:
-		property.merge({"name": "items/%d/%s" % [ item, property.get("name", "") ]}, true)
-		return property
-
-	var list: Array[Dictionary] = []
-	var properties = get_item_properties()
-	for i in item_count:
-		properties = properties.map(formatter.bind(i))
-		list.append_array(properties.duplicate(true))
-
-	return list
-
-
-## Override when dealing with items. See [method Object._get_property_list].
-func get_item_properties() -> Array[Dictionary]:
-	return []
-
-
-func _get(path: StringName) -> Variant:
-	if not path.begins_with("items") or path.count("/") != 2:
-		return null
-
-	var item: int = int(path.get_slice("/", 1))
-	var property: String = path.get_slice("/", 2)
-
-	return item_get(item, property)
-
-
-## Override when dealing with items. See [method Object._get].
-func item_get(item: int, property: String) -> Variant:
-	return null
-
-
-func _set(path: StringName, value: Variant) -> bool:
-	if not path.begins_with("items") or path.count("/") != 2:
-		return false
-
-	var item: int = int(path.get_slice("/", 1))
-	var property: String = path.get_slice("/", 2)
-
-	return item_set(item, property, value)
-
-
-## Override when dealing with items. See [method Object._set].
-func item_set(item: int, property: String, value: Variant) -> bool:
-	return true
-
-
-func _property_can_revert(path: StringName) -> bool:
-	if path == &'draw_order':
-		return draw_order != get_clean_draw_order()
-
-	if not path.begins_with("items") or path.count("/") != 2:
-		return false
-
-	var item: int = int(path.get_slice("/", 1))
-	var property: String = path.get_slice("/", 2)
-
-	return item_property_can_revert(item, property)
-
-
-## Override when dealing with items. See [method Object.property_can_revert].
-func item_property_can_revert(item: int, property: String) -> bool:
-	return false
-
-
-func _property_get_revert(path: StringName) -> Variant:
-	if path == &'draw_order':
-		return get_clean_draw_order()
-
-	if not path.begins_with("items") or path.count("/") != 2:
-		return false
-
-	var item: int = int(path.get_slice("/", 1))
-	var property: String = path.get_slice("/", 2)
-
-	return item_property_get_revert(item, property)
-
-
-## Override when dealing with items. See [method Object.property_get_revert].
-func item_property_get_revert(item: int, property: String) -> Variant:
-	return null
-
-#endregion
