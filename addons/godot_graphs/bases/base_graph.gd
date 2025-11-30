@@ -3,14 +3,13 @@ extends Control
 
 ## The base for any graph you may need. No structure and just a backbone.
 
-@export var item_count: int = 0:
-	set = _set_item_count
-@export_storage var _items: Array[Dictionary] = []
-
 @export var draw_order := get_default_draw_order():
 	set(v):
 		draw_order = v
 		queue_redraw()
+@export var item_count: int = 0:
+	set = _set_item_count
+@export_storage var _items: Array[Dictionary] = []
 
 
 var dirty: bool = false
@@ -105,8 +104,8 @@ func item_set(item: int, property: String, value: Variant) -> bool:
 
 
 func _property_can_revert(path: StringName) -> bool:
-	#if path == &'draw_order':
-		#return draw_order != get_default_draw_order()
+	if path == &'draw_order':
+		return draw_order != get_default_draw_order()
 
 	if not path.begins_with("items") or path.count("/") != 2:
 		return false
@@ -123,8 +122,8 @@ func item_property_can_revert(item: int, property: String) -> bool:
 
 
 func _property_get_revert(path: StringName) -> Variant:
-	#if path == &'draw_order':
-		#return get_default_draw_order()
+	if path == &'draw_order':
+		return get_default_draw_order()
 
 	if not path.begins_with("items") or path.count("/") != 2:
 		return false

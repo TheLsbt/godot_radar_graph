@@ -956,20 +956,27 @@ y_axis_font = SubResource("FontFile_msdd5")
 y_axis_font_size = 10
 x_axis_style_box = SubResource("StyleBoxFlat_630p8")
 x_axis_font = SubResource("FontFile_msdd5")
+item_width = 129.855
+seperation = 66.655
 draw_grid = true
 grid_color = Color(0.6223959, 0.6223959, 0.6223959, 1)
-item_width = 80.0
-seperation = 10.0
-item_count = 1
+draw_order = PackedStringArray("x_axis", "y_axis", "x_axis_text")
+item_count = 2
 _items = Array[Dictionary]([{
-"color": Color(1, 0.4869792, 0.4869792, 1),
-"title": "Item A",
-"value": 0.17
+"color": Color(0, 0, 0, 1),
+"title": "A",
+"value": 0.74
+}, {
+"color": Color(0, 0, 0, 1),
+"title": "B",
+"value": 0.38
 }])
-draw_order = PackedStringArray("x_axis_text", "y_axis_text", "grid", "view_rect", "bars")
-items/0/title = "Item A"
-items/0/value = 0.17
-items/0/color = Color(1, 0.4869792, 0.4869792, 1)
+items/0/title = "A"
+items/0/value = 0.74
+items/0/color = Color(0, 0, 0, 1)
+items/1/title = "B"
+items/1/value = 0.38
+items/1/color = Color(0, 0, 0, 1)
 
 [node name="Control" type="Control" parent="."]
 anchors_preset = 0

@@ -46,6 +46,7 @@ extends "./base_graph.gd"
 		dirty = true
 		queue_redraw()
 
+
 @export_subgroup('X Axis')
 ## See [member y_axis_style_box].
 @export var x_axis_style_box: StyleBox:
@@ -70,17 +71,24 @@ extends "./base_graph.gd"
 		x_axis_font_size = val
 		dirty = true
 		queue_redraw()
+@export var item_width: float = 5.0:
+	set(v):
+		item_width = v
+		dirty = true
+		queue_redraw()
+		update_minimum_size()
+## Minimum spacing around the item
+@export var seperation: float = 2.0:
+	set(v):
+		seperation = v
+		dirty = true
+		queue_redraw()
+		update_minimum_size()
 
 @export_group('Grid')
 @export var draw_grid := false
 @export var grid_width := 1.0
 @export var grid_color := Color.WHITE
-
-@export_group('Items')
-@export var item_width: float = 5.0
-## Minimum spacing around the item
-@export var seperation: float = 2.0
-@export_group('')
 
 
 func _on_axis_stylebox_changed() -> void:
@@ -91,14 +99,8 @@ func _init() -> void:
 	item_rect_changed.connect(func(): dirty = true; queue_redraw())
 
 
-func get_clean_draw_order() -> PackedStringArray:
-	return ['x_axis', 'x_axis_text', 'y_axis', 'y_axis_text', 'grid', 'view_rect', 'bars']
-
-
-func _rg_draw_view_rect() -> void:
-	if draw_grid:
-		var view_rect := get_view_rect()
-		draw_rect(view_rect, grid_color, false, grid_width)
+func get_default_draw_order() -> PackedStringArray:
+	return ["x_axis", "y_axis", "view_rect", "grid"]
 
 
 func _rg_draw_x_axis() -> void:
@@ -111,24 +113,6 @@ func _rg_draw_x_axis() -> void:
 		x_axis_style_box.draw(canvas_item, x_axis)
 
 
-func _rg_draw_x_axis_text() -> void:
-	var canvas_item := get_canvas_item()
-	var view_rect := get_view_rect()
-	var x_axis := get_x_axis_rect()
-	var y_axis := get_y_axis_rect()
-
-	var total_items_width := _items.size() * item_width
-	var spacing = (view_rect.size.x - total_items_width) / (_items.size() + 1)
-
-	# Draw the titles along the x-axis
-	for i in _items.size():
-		var title: String = _items[i].title
-		var x: float = spacing + i * (item_width + spacing)
-		var pos = Vector2(x + y_axis.end.x, x_axis.position.y + x_axis_font.get_ascent(x_axis_font_size))
-		x_axis_font.draw_multiline_string(canvas_item, pos, title, HORIZONTAL_ALIGNMENT_CENTER,
-			item_width, x_axis_font_size)
-
-
 func _rg_draw_y_axis() -> void:
 	var canvas_item := get_canvas_item()
 	var view_rect := get_view_rect()
@@ -139,51 +123,10 @@ func _rg_draw_y_axis() -> void:
 		y_axis_style_box.draw(canvas_item, y_axis)
 
 
-func _rg_draw_y_axis_text() -> void:
-	var canvas_item := get_canvas_item()
-	var view_rect := get_view_rect()
-	var x_axis := get_x_axis_rect()
-	var y_axis := get_y_axis_rect()
-	var v := max_value
-	while v > min_value:
-		var val = (v / max_value) * view_rect.size.y + y_axis_font.get_descent(y_axis_font_size)
-		var string_size := y_axis_font.get_string_size(str(abs(max_value - v)),
-			HORIZONTAL_ALIGNMENT_CENTER, y_axis.size.x, y_axis_font_size)
-		y_axis_font.draw_string(canvas_item, Vector2(y_axis.position.x, val),
-			str(abs(max_value - v)), HORIZONTAL_ALIGNMENT_CENTER, y_axis.size.x, y_axis_font_size)
-		v -= cosmetic_step
-
-
-func _rg_draw_bars() -> void:
-	var view_rect := get_view_rect()
-
-	var total_items_width := _items.size() * item_width
-	var spacing = (view_rect.size.x - total_items_width) / (_items.size() + 1)
-
-	var x_axis := get_x_axis_rect()
-	var y_axis := get_y_axis_rect()
-	var canvas_item := get_canvas_item()
-
-	for i in _items.size():
-		var item: Dictionary = _items[i]
-		var title: String = item.title
-		var value: float = item.value
-		var color: Color = item.color
-
-		var x: float = spacing + i * (item_width + spacing)
-		var pos = Vector2(x + y_axis.end.x, x_axis.position.y + x_axis_font.get_ascent())
-
-		var percent := (value - min_value) / max_value
-
-		var rect := Rect2(Vector2(pos.x, 0), Vector2(item_width, size.y - _biggset_title_vector.y))
-		rect.position.y = percent * view_rect.size.y
-
-		# This is the actual bar
-		var r := Rect2(
-			Vector2(pos.x + item_width, view_rect.end.y),
-			Vector2(-item_width, -percent * view_rect.size.y)
-		).abs()
-		draw_rect(r, color)
+func _rg_draw_view_rect() -> void:
+	if draw_grid:
+		var view_rect := get_view_rect()
+		draw_rect(view_rect, grid_color, false, grid_width)
 
 
 func _rg_draw_grid() -> void:
@@ -205,11 +148,6 @@ func _rg_draw_grid() -> void:
 
 	if grid.size() > 1:
 		draw_multiline(grid, grid_color, grid_width)
-
-
-func get_line_size(text: String, line: int, width := -1) -> Vector2:
-	var string := text.get_slice('\n', line)
-	return x_axis_font.get_string_size(string, 0, width, x_axis_font_size)
 
 
 var _item_metadata: Array[Dictionary] = []
