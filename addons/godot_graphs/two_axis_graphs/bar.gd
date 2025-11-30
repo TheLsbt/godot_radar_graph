@@ -52,9 +52,6 @@ func get_default_draw_order() -> PackedStringArray:
 
 
 func try_fix_values() -> void:
-	min_value = minf(min_value, max_value)
-	max_value = maxf(min_value, max_value)
-
 	for item in _items.size():
 		set_item_value(item, _items[item].get("value", 0.0))
 	notify_property_list_changed()

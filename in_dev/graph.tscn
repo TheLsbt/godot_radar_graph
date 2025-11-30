@@ -957,9 +957,10 @@ y_axis_font = SubResource("FontFile_msdd5")
 y_axis_font_size = 10
 x_axis_font = SubResource("FontFile_msdd5")
 x_axis_item_width = 148.655
-min_value = 26.0
-max_value = 61.0
+min_value = 23.0
+max_value = 52.0
 step = 0.0
+rounded = true
 y_axis_style_box = SubResource("StyleBoxFlat_c2031")
 x_axis_style_box = SubResource("StyleBoxFlat_630p8")
 draw_grid = true
@@ -969,17 +970,17 @@ item_count = 2
 _items = Array[Dictionary]([{
 "color": Color(0, 0, 0, 1),
 "title": "A",
-"value": 61.0
+"value": 52.0
 }, {
 "color": Color(0, 0, 0, 1),
 "title": "B",
-"value": 26.0
+"value": 52.0
 }])
 items/0/title = "A"
-items/0/value = 61.0
+items/0/value = 52.0
 items/0/color = Color(0, 0, 0, 1)
 items/1/title = "B"
-items/1/value = 26.0
+items/1/value = 52.0
 items/1/color = Color(0, 0, 0, 1)
 
 [node name="Control" type="Control" parent="."]

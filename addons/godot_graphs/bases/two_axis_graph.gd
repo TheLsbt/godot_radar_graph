@@ -17,21 +17,31 @@ var _fixme_timer := Timer.new()
 @export_group("Range")
 @export_range(0, 100, 1, 'or_less', 'or_greater') var min_value: float = 0.0:
 	set(v):
-		min_value = v
-		max_value = maxf(min_value, max_value)
+		min_value = minf(v, max_value)
 		_try_fix_values()
 		queue_redraw()
 @export_range(0, 100, 1, 'or_less', 'or_greater') var max_value := 100.0:
 	set(v):
-		max_value = v
-		min_value = minf(min_value, max_value)
+		max_value = maxf(v, min_value)
 		_try_fix_values()
 		queue_redraw()
 ## Snapped according to the folowing code: [codeblock]clampf(snappedf(value, step), min_value, max_value)[/codeblock]
 ## See [member Range.step] for more.
-@export var step := 10.0
-@export var cosmetic_step := 5.0
-@export var rounded := false
+@export var step := 10.0:
+	set(v):
+		step = v
+		_try_fix_values()
+		queue_redraw()
+@export var cosmetic_step := 5.0:
+	set(v):
+		cosmetic_step = v
+		_try_fix_values()
+		queue_redraw()
+@export var rounded := false:
+	set(v):
+		rounded = v
+		_try_fix_values()
+		queue_redraw()
 
 @export_group('Style')
 @export_subgroup("Y Axis", "y_axis")
@@ -60,21 +70,33 @@ var _fixme_timer := Timer.new()
 
 
 @export_group('Grid')
-@export var draw_grid := false
-@export var grid_width := 1.0
-@export var grid_color := Color.WHITE
+@export var draw_grid := false:
+	set(v):
+		draw_grid = v
+		queue_redraw()
+@export var grid_width := 1.0:
+	set(v):
+		grid_width = v
+		queue_redraw()
+@export var grid_color := Color.WHITE:
+	set(v):
+		grid_color = v
+		queue_redraw()
 
 
 func _on_axis_stylebox_changed() -> void:
 	queue_redraw()
 
 
-func _init() -> void:
-	add_child(_fixme_timer, false, Node.INTERNAL_MODE_BACK)
+func _ready() -> void:
 	_fixme_timer.autostart = false
 	_fixme_timer.one_shot = true
 	_fixme_timer.wait_time = FIXME_TIME
+	add_child(_fixme_timer, false, Node.INTERNAL_MODE_BACK)
 	_fixme_timer.timeout.connect(try_fix_values)
+
+
+func _init() -> void:
 	item_rect_changed.connect(func(): dirty = true; queue_redraw())
 
 
@@ -162,9 +184,10 @@ func get_y_axis_steps() -> PackedFloat32Array:
 	return []
 
 
-func _try_fix_values() -> void:
-	_fixme_timer.start()
 
+func _try_fix_values() -> void:
+	if _fixme_timer.is_inside_tree():
+		_fixme_timer.start()
 
 ## [b][color=LIGHT_GREEN](Should Override)[/color][/b]
 ## This is called when the script determines values should be fixed.
