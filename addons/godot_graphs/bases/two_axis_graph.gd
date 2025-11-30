@@ -1,7 +1,12 @@
 @tool
 extends "./base_graph.gd"
 
+# NOTE: This could be moved into base_graph.gd
+const FIXME_TIME := 0.2
 
+var _fixme_timer := Timer.new()
+
+# TODO: Make a styling system similar to themes becuase the normal way is shite
 # TODO: When step and round is changed make all the values reflect that
 # TODO: Add a way to pad the step (using a format) or round it
 # TODO: Add a colorblind mode by implementing a tilling pattern across the bar
@@ -10,8 +15,18 @@ extends "./base_graph.gd"
 ## This script is intented to be used as a base class for graphs with two primary axis.
 
 @export_group("Range")
-@export_range(0, 100, 1, 'or_less', 'or_greater') var min_value: float = 0.0
-@export_range(0, 100, 1, 'or_less', 'or_greater') var max_value := 100.0
+@export_range(0, 100, 1, 'or_less', 'or_greater') var min_value: float = 0.0:
+	set(v):
+		min_value = v
+		max_value = maxf(min_value, max_value)
+		_try_fix_values()
+		queue_redraw()
+@export_range(0, 100, 1, 'or_less', 'or_greater') var max_value := 100.0:
+	set(v):
+		max_value = v
+		min_value = minf(min_value, max_value)
+		_try_fix_values()
+		queue_redraw()
 ## Snapped according to the folowing code: [codeblock]clampf(snappedf(value, step), min_value, max_value)[/codeblock]
 ## See [member Range.step] for more.
 @export var step := 10.0
@@ -19,7 +34,7 @@ extends "./base_graph.gd"
 @export var rounded := false
 
 @export_group('Style')
-@export_subgroup("Y Axis")
+@export_subgroup("Y Axis", "y_axis")
 ## Draws the stylebox onto the axis.[br][br]
 ## At the momment the stylebox uses for the axis bars are for decrotive purposes and does not[br]
 ## affect the position and size of the axis.
@@ -31,23 +46,8 @@ extends "./base_graph.gd"
 		if val:
 			y_axis_style_box.changed.connect(_on_axis_stylebox_changed)
 		queue_redraw()
-@export var y_axis_font: Font:
-	set(val):
-		y_axis_font = val
-		dirty = true
-		queue_redraw()
-	get:
-		if not y_axis_font:
-			return ThemeDB.fallback_font
-		return y_axis_font
-@export var y_axis_font_size := 16:
-	set(val):
-		y_axis_font_size = val
-		dirty = true
-		queue_redraw()
 
-
-@export_subgroup('X Axis')
+@export_subgroup('X Axis', "x_axis")
 ## See [member y_axis_style_box].
 @export var x_axis_style_box: StyleBox:
 	set(val):
@@ -57,33 +57,7 @@ extends "./base_graph.gd"
 		if val:
 			x_axis_style_box.changed.connect(_on_axis_stylebox_changed)
 		queue_redraw()
-@export var x_axis_font: Font:
-	set(val):
-		x_axis_font = val
-		dirty = true
-		queue_redraw()
-	get:
-		if not x_axis_font:
-			return ThemeDB.fallback_font
-		return x_axis_font
-@export var x_axis_font_size := 16:
-	set(val):
-		x_axis_font_size = val
-		dirty = true
-		queue_redraw()
-@export var item_width: float = 5.0:
-	set(v):
-		item_width = v
-		dirty = true
-		queue_redraw()
-		update_minimum_size()
-## Minimum spacing around the item
-@export var seperation: float = 2.0:
-	set(v):
-		seperation = v
-		dirty = true
-		queue_redraw()
-		update_minimum_size()
+
 
 @export_group('Grid')
 @export var draw_grid := false
@@ -96,6 +70,11 @@ func _on_axis_stylebox_changed() -> void:
 
 
 func _init() -> void:
+	add_child(_fixme_timer, false, Node.INTERNAL_MODE_BACK)
+	_fixme_timer.autostart = false
+	_fixme_timer.one_shot = true
+	_fixme_timer.wait_time = FIXME_TIME
+	_fixme_timer.timeout.connect(try_fix_values)
 	item_rect_changed.connect(func(): dirty = true; queue_redraw())
 
 
@@ -153,46 +132,16 @@ func _rg_draw_grid() -> void:
 var _item_metadata: Array[Dictionary] = []
 var _biggset_title_vector := Vector2.ZERO
 
-# Calculates all values needed. Call make_dirty() when changing properties.
-func _cache() -> void:
-	if not dirty:
-		return
-
-	# Calculate the rects of each titles
-	for i in _items:
-		var title: String = i.title
-		var title_size := x_axis_font.get_multiline_string_size(title,
-			HORIZONTAL_ALIGNMENT_CENTER, item_width, x_axis_font_size)
-		var data := {
-			'title_size': title_size
-		}
-		_biggset_title_vector = _biggset_title_vector.max(title_size)
-
-	update_minimum_size()
-
-	dirty = false
-
-
+## Implement
 func get_y_axis_rect() -> Rect2:
-	_cache()
-	return Rect2(
-		Vector2.ZERO,
-		Vector2(y_axis_font.get_string_size(
-			str(max_value), HORIZONTAL_ALIGNMENT_CENTER, -1, y_axis_font_size).x,
-			size.y - _biggset_title_vector.y)
-		)
+	return Rect2()
+
 
 func get_x_axis_rect() -> Rect2:
-	_cache()
-	var y_axis := get_y_axis_rect()
-	return Rect2(
-		Vector2(y_axis.end.x, size.y - _biggset_title_vector.y),
-		Vector2(size.x - y_axis.end.x, _biggset_title_vector.y)
-	)
+	return Rect2()
 
 
 func get_view_rect() -> Rect2:
-	_cache()
 	var x_axis := get_x_axis_rect()
 	var y_axis := get_y_axis_rect()
 	var rect := Rect2(
@@ -213,7 +162,11 @@ func get_y_axis_steps() -> PackedFloat32Array:
 	return []
 
 
-func _get_minimum_size() -> Vector2:
-	_cache()
-	var minimum_width := (_items.size() * (item_width + seperation)) + get_y_axis_rect().size.x
-	return Vector2(minimum_width, _biggset_title_vector.y)
+func _try_fix_values() -> void:
+	_fixme_timer.start()
+
+
+## [b][color=LIGHT_GREEN](Should Override)[/color][/b]
+## This is called when the script determines values should be fixed.
+func try_fix_values() -> void:
+	pass
