@@ -14,10 +14,6 @@ config/name="godot_radar_graph"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://assets/full_icon.svg"
 
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/godot_graphs/plugin.cfg")
-
 [file_customization]
 
 folder_colors={
