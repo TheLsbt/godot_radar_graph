@@ -60,16 +60,34 @@ func _rg_draw_pie() -> void:
 	print(total_value)
 	var current := 0.0
 	var _sep := seperation / .25
-	print(seperation > PI / inner_radius * 10)
+	# TODO: Figure out a way to check when she seperation in px is > than the inner radius than px
 	for i in _dummy.size():
 		var value: float = _dummy[i].value
 		var mapped := remap(value, 0, total_value, 0,360)
 
-		var outter := _get_arc(Vector2.ZERO, out_radius, deg_to_rad(current + (_sep / out_radius * 0.5)), deg_to_rad((current + mapped) - (_sep / out_radius * 0.5)), 15)
+		var start_outter := deg_to_rad(current + (_sep / out_radius * 0.5))
+		var end_outter := deg_to_rad((current + mapped) - (_sep / out_radius * 0.5))
+		var mid_outter := lerpf(start_outter, end_outter, 0.5)
+
+		draw_circle(get_circle_point(Vector2.ZERO, mid_outter, out_radius), 8, Color.MAROON)
+
+		var start_inner := deg_to_rad(current + (_sep / inner_radius * 0.5))
+		var end_inner := deg_to_rad((current + mapped) - (_sep / inner_radius * 0.5))
+		var mid_inner := lerpf(start_outter, end_outter, 0.5)
+
+
+		var outter := _get_arc(Vector2.ZERO, out_radius, start_outter, end_outter, 15)
 		var inner := _get_arc(
-			Vector2.ZERO, inner_radius, deg_to_rad((current + mapped) - (_sep / inner_radius * 0.5)), deg_to_rad(current + (_sep / inner_radius * 0.5)), 15)
+			Vector2.ZERO, inner_radius, end_inner, start_inner, 15)
+
+		if is_zero_approx(inner_radius):
+			var a := Vector2.ZERO + Vector2.ZERO.direction_to(
+				get_circle_point(Vector2.ZERO, mid_outter, out_radius)) * _sep
+			outter.append(a)
+		else:
+			outter.append_array(inner)
+
 		#inner.reverse()
-		outter.append_array(inner)
 		draw_polygon(outter, [Color(randf(), randf(), randf())])
 		current = mapped# + (seperation / inner_radius)
 
@@ -85,10 +103,15 @@ func _get_arc(center: Vector2, radius: float, start: float, end: float, complexi
 
 	for i in range(complexity):
 		var angle = start + arc_step * i
-		var x = center.x + radius * cos(angle)
-		var y = center.y + radius * sin(angle)
-		points.append(Vector2(x, y))
+
+		points.append(get_circle_point(center, angle, radius))
 
 	return points
+
+
+func get_circle_point(center: Vector2, angle: float, radius: float) -> Vector2:
+	var x = center.x + radius * cos(angle)
+	var y = center.y + radius * sin(angle)
+	return Vector2(x, y)
 
 #endregion
