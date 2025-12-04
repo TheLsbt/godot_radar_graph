@@ -2,9 +2,9 @@
 extends "../bases/base_graph.gd"
 
 
-@export var out_radius: float:
+@export var outer_radius: float:
 	set(v):
-		out_radius = v
+		outer_radius = v
 		queue_redraw()
 @export var inner_radius: float:
 	set(v):
@@ -42,61 +42,90 @@ func item_property_get_revert(item: int, property: String) -> Variant:
 
 
 
+## Converts a px gap to a given radius in px to a angular gap in radians
+func px_to_radians(gap: float, radius: float) -> float:
+	if radius <= 0 or gap <= 0:
+		return 0
+
+	var ratio := maxf(0, minf(1, gap / (2.0 * radius)))
+	return 2.0 * asin(ratio)
+
+
+# TODO: Make this a util, and return a dictionary containing more detailed data
+func compute_wedges(values: PackedFloat32Array, center: Vector2) -> Array[PackedVector2Array]:
+	if values.size() == 0:
+		return []
+	var total := Array(values).reduce(func(a, b): return a + b, 0)
+	if total <= 0:
+		printerr("Values cannot total to less than 0")
+		return []
+
+	var ref_radius := outer_radius if  is_zero_approx(inner_radius) else (outer_radius + inner_radius) / 2.0
+
+	var s := px_to_radians(seperation, ref_radius)
+	var total_seperation := 2.0 * PI - 1e-12
+	print(s)
+
+	if values.size() * s >= total_seperation:
+		s = total_seperation / values.size()
+
+	var remaining := 2.0 * PI - values.size() * s
+
+	# Minimum wedge angle enforcment (unused)
+	#var min_angle := deg_to_rad(maxf(0, min_angle_deg))
+
+	# The start angle, currently hardcoded but could be exposed to allow for offseting the start
+	const start_angle_deg := 0
+	var angle := deg_to_rad(start_angle_deg)
+
+	var results: Array[PackedVector2Array] = []
+	for v in values:
+		var theta: float = (v / total) * remaining
+
+		# Minimum wedge angle enforcment (unused)
+		#theta = deg_to_rad(maxf(0, min_angle_deg))
+
+		var start = angle
+		var end = angle + theta
+
+		var outer_pts := sample_arc(center, outer_radius, start, end, 15)
+
+		var polygon: PackedVector2Array = []
+		if inner_radius > 0 and inner_radius < outer_radius:
+			# NOTE: This polygon is ccw
+			var inner_pts = sample_arc(center, inner_radius, end, start, 15)
+			polygon = outer_pts + inner_pts
+		else:
+			polygon = outer_pts + PackedVector2Array([center])
+
+		results.append(polygon)
+
+		angle = end + s
+	return results
+
+
+
 #region Draw
 
+
 func _rg_draw_pie() -> void:
-	var _dummy := [{
-		"value": 10
-	},{
-		"value": 30
-	}
-	]
+	var wedges := compute_wedges([15, 20, 100], Vector2.ZERO)
 
-	var empty_space := seperation * _dummy.size()
+	for w in wedges:
+		draw_polygon(w, [Color(randf(), randf(), randf())])
 
+		for p in w:
+			draw_circle(p, 4, Color.MAGENTA)
 
+	print(wedges)
 
-	var total_value := _dummy.reduce(func(a, e): return a + e.value, 0)
-	print(total_value)
-	var current := 0.0
-	var _sep := seperation / .25
-	# TODO: Figure out a way to check when she seperation in px is > than the inner radius than px
-	for i in _dummy.size():
-		var value: float = _dummy[i].value
-		var mapped := remap(value, 0, total_value, 0,360)
-
-		var start_outter := deg_to_rad(current + (_sep / out_radius * 0.5))
-		var end_outter := deg_to_rad((current + mapped) - (_sep / out_radius * 0.5))
-		var mid_outter := lerpf(start_outter, end_outter, 0.5)
-
-		draw_circle(get_circle_point(Vector2.ZERO, mid_outter, out_radius), 8, Color.MAROON)
-
-		var start_inner := deg_to_rad(current + (_sep / inner_radius * 0.5))
-		var end_inner := deg_to_rad((current + mapped) - (_sep / inner_radius * 0.5))
-		var mid_inner := lerpf(start_outter, end_outter, 0.5)
-
-
-		var outter := _get_arc(Vector2.ZERO, out_radius, start_outter, end_outter, 15)
-		var inner := _get_arc(
-			Vector2.ZERO, inner_radius, end_inner, start_inner, 15)
-
-		if is_zero_approx(inner_radius):
-			var a := Vector2.ZERO + Vector2.ZERO.direction_to(
-				get_circle_point(Vector2.ZERO, mid_outter, out_radius)) * _sep
-			outter.append(a)
-		else:
-			outter.append_array(inner)
-
-		#inner.reverse()
-		draw_polygon(outter, [Color(randf(), randf(), randf())])
-		current = mapped# + (seperation / inner_radius)
 
 #endregion
 
 
 #region Private
 
-func _get_arc(center: Vector2, radius: float, start: float, end: float, complexity: int) -> PackedVector2Array:
+func sample_arc(center: Vector2, radius: float, start: float, end: float, complexity: int) -> PackedVector2Array:
 	var points := PackedVector2Array()
 
 	var arc_step = (end - start) / (complexity - 1)
