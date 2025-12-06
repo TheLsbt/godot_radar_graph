@@ -24,3 +24,9 @@ func _init() -> void:
 		"group": 1,
 		"background_color": Color.DARK_ORANGE
 	})
+	add_data({
+		"label": "Dataset 4",
+		"values": [10],
+		"group": 1,
+		"background_color": Color.PINK
+	})

@@ -25,6 +25,12 @@ func _update() -> void:
 	var groups_keys_sorted := groups.keys()
 	groups_keys_sorted.sort()
 
+	"""
+	There is a issue where the graph where when groups are calculated the accumulated values use
+	the biggest one even when they are in a different index. The best idea is to swap indexs and
+	groups so we loop through each group first and then step through the index.
+	SO: sorted groups -> group -> loop each index
+	"""
 
 	# First calculate the groups first
 	var group_thickness := group_seperation + (bar_thickness * groups.size())
@@ -41,7 +47,9 @@ func _update() -> void:
 		var pos: float = spacing + i * (group_thickness + spacing)
 
 		for d in groups_keys_sorted:
+
 			var accumulated_value := 0.0
+
 			for g in groups[d].size():
 				var group: Dictionary = groups[d][g]
 
@@ -84,6 +92,8 @@ func _update() -> void:
 				)
 				draw_rect(bar, Color(color, 0.5))
 
+				accumulated_value += range_end
+
 
 				#var bar := Rect2(
 				#Vector2(pos + (bar_seperation + bar_thickness) * (d - 1), view_rect.position.y),
@@ -97,7 +107,6 @@ func _update() -> void:
 
 
 
-				accumulated_value += range_end
 				# TODO: Make accumulated value also a range with a upper and lower.
 				"""
 				If the range_begin is less than the lower range we move the lower range down

@@ -13,4 +13,3 @@ script = ExtResource("1_mc3g1")
 group_seperation = 10.0
 bar_seperation = 20.0
 bar_thickness = 122.705
-floating = true
