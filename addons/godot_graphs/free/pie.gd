@@ -50,58 +50,83 @@ func px_to_radians(gap: float, radius: float) -> float:
 	var ratio := maxf(0, minf(1, gap / (2.0 * radius)))
 	return 2.0 * asin(ratio)
 
+#
+## TODO: Make this a util, and return a dictionary containing more detailed data
+#func compute_wedges(values: PackedFloat32Array, center: Vector2) -> Array[PackedVector2Array]:
+	#if values.size() == 0:
+		#return []
+	#var total := Array(values).reduce(func(a, b): return a + b, 0)
+	#if total <= 0:
+		#printerr("Values cannot total to less than 0")
+		#return []
+#
+	#var ref_radius := outer_radius if  is_zero_approx(inner_radius) else (outer_radius + inner_radius) / 2.0
+#
+	#var s := px_to_radians(seperation, ref_radius)
+	#var total_seperation := 2.0 * PI - 1e-12
+	#print(s)
+#
+	#if values.size() * s >= total_seperation:
+		#s = total_seperation / values.size()
+#
+	#var remaining := 2.0 * PI - values.size() * s
+#
+	## Minimum wedge angle enforcment (unused)
+	##var min_angle := deg_to_rad(maxf(0, min_angle_deg))
+#
+	## The start angle, currently hardcoded but could be exposed to allow for offseting the start
+	#const start_angle_deg := 0
+	#var angle := deg_to_rad(start_angle_deg)
+#
+	#var results: Array[PackedVector2Array] = []
+	#for v in values:
+		#var theta: float = (v / total) * remaining
+#
+		## Minimum wedge angle enforcment (unused)
+		##theta = deg_to_rad(maxf(0, min_angle_deg))
+#
+		#var start = angle
+		#var end = angle + theta
+#
+		#var outer_pts := sample_arc(center, outer_radius, start, end, 15)
+#
+		#var polygon: PackedVector2Array = []
+		#if inner_radius > 0 and inner_radius < outer_radius:
+			## NOTE: This polygon is ccw
+			#var inner_pts = sample_arc(center, maxf(s, inner_radius), end, start, 15)
+			#polygon = outer_pts + inner_pts
+		#else:
+			#polygon = outer_pts + PackedVector2Array([center])
+#
+		#results.append(polygon)
+#
+		#angle = end + s
+	#return results
 
-# TODO: Make this a util, and return a dictionary containing more detailed data
-func compute_wedges(values: PackedFloat32Array, center: Vector2) -> Array[PackedVector2Array]:
-	if values.size() == 0:
-		return []
-	var total := Array(values).reduce(func(a, b): return a + b, 0)
-	if total <= 0:
-		printerr("Values cannot total to less than 0")
-		return []
 
-	var ref_radius := outer_radius if  is_zero_approx(inner_radius) else (outer_radius + inner_radius) / 2.0
-
-	var s := px_to_radians(seperation, ref_radius)
-	var total_seperation := 2.0 * PI - 1e-12
-	print(s)
-
-	if values.size() * s >= total_seperation:
-		s = total_seperation / values.size()
-
-	var remaining := 2.0 * PI - values.size() * s
-
-	# Minimum wedge angle enforcment (unused)
-	#var min_angle := deg_to_rad(maxf(0, min_angle_deg))
-
-	# The start angle, currently hardcoded but could be exposed to allow for offseting the start
-	const start_angle_deg := 0
-	var angle := deg_to_rad(start_angle_deg)
-
+func compute_wedges(values: PackedFloat32Array) -> Array[PackedVector2Array]:
 	var results: Array[PackedVector2Array] = []
+	var total_value: float = Array(values).reduce(func(a, b): return a + b, 0.0)
+	var angle := 0.0
+	var s := px_to_radians(seperation, outer_radius)
+
 	for v in values:
-		var theta: float = (v / total) * remaining
+		# Calculate how much of the circle the value takes
+		var space: float =  v / total_value * (PI * 2)
 
-		# Minimum wedge angle enforcment (unused)
-		#theta = deg_to_rad(maxf(0, min_angle_deg))
+		var space_center := angle + space / 2
+		var dir := Vector2.ZERO.direction_to(get_circle_point(Vector2.ZERO, space_center, outer_radius))
+		var center := dir * s
 
-		var start = angle
-		var end = angle + theta
+		var outside := sample_arc(center, outer_radius, angle, angle + space, 50)
+		outside.append(center)
 
-		var outer_pts := sample_arc(center, outer_radius, start, end, 15)
+		results.append(outside)
 
-		var polygon: PackedVector2Array = []
-		if inner_radius > 0 and inner_radius < outer_radius:
-			# NOTE: This polygon is ccw
-			var inner_pts = sample_arc(center, inner_radius, end, start, 15)
-			polygon = outer_pts + inner_pts
-		else:
-			polygon = outer_pts + PackedVector2Array([center])
+		angle += space
 
-		results.append(polygon)
-
-		angle = end + s
 	return results
+
 
 
 
@@ -109,16 +134,10 @@ func compute_wedges(values: PackedFloat32Array, center: Vector2) -> Array[Packed
 
 
 func _rg_draw_pie() -> void:
-	var wedges := compute_wedges([15, 20, 100], Vector2.ZERO)
+	var wedges := compute_wedges([15, 20, 100])
 
 	for w in wedges:
 		draw_polygon(w, [Color(randf(), randf(), randf())])
-
-		for p in w:
-			draw_circle(p, 4, Color.MAGENTA)
-
-	print(wedges)
-
 
 #endregion
 

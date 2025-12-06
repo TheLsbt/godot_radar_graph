@@ -1,4 +1,38 @@
-# Godot Radar Graph
+# Under construction
+---
+
+# Graph.gd (Formaly Godot Radar Graph)
+---
+
+A Godot addon that provides multiple graphs, which are highly customizable and extendable.
+
+> [!NOTE]
+> New with version 2! Added out of the box support for 3 types of graphs such as Bar, Line and Pie graphs. (Radar graphs are still included)
+
+# Features
+
+## Bar Graph
+- [x] Basic implementation
+- [x] Floating values
+- [x] Stacked Bars
+- [ ] Style Support
+- [ ] Custom value functions such as exponential & log functions
+
+## Line Graph
+- [ ] Basic implementation
+- [ ] Floating values
+- [ ] Style Support
+- [ ] Custom value functions such as exponential & log functions
+
+## Pie Graph
+- [ ] Basic implementation
+
+## Misc.
+- [ ] Patterns & shapes
+- [ ] Ledgend
+- [ ] Tooltips
+
+
 - Godot Radar Graph is a script that allows you to easily draw [Radar Graphs](https://en.wikipedia.org/wiki/Radar_chart) which are highly [customizable](#customize) and also supports animation. See the [installation guide](#installation) to get started.
 > [!NOTE]
 > As of 1.1 the addon follows a normal addon structure so you can no longer reference this addon normally.

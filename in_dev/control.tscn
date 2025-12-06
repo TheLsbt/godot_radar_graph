@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://cyfcgvh86k3k4"]
+
+[ext_resource type="Script" uid="uid://2b2ft0xnp08p" path="res://in_dev/control.gd" id="1_mc3g1"]
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mc3g1")
+group_seperation = 10.0
+bar_seperation = 20.0
+bar_thickness = 122.705
+floating = true
