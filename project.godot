@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="godot_radar_graph"
+config/name="Graph.gd"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://assets/full_icon.svg"
 
