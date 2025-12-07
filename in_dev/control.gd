@@ -14,19 +14,19 @@ func _init() -> void:
 	})
 	add_data({
 		"label": "Dataset 2",
-		"values": [30, [30, 40], 30],
+		"values": [10, [30, 40], 30],
 		"group": 1,
 		"background_color": Color.CADET_BLUE
 	})
 	add_data({
 		"label": "Dataset 3",
-		"values": [10, [5, 10], 100],
+		"values": [[10, 20], [5, 10], 100],
 		"group": 1,
 		"background_color": Color.DARK_ORANGE
 	})
 	add_data({
 		"label": "Dataset 4",
-		"values": [[20, 30], 20, 20],
+		"values": [[10, 20], 20, 20],
 		"group": 1,
 		"background_color": Color.PINK
 	})

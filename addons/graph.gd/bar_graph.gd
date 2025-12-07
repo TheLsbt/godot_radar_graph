@@ -47,8 +47,7 @@ func _update() -> void:
 		var pos: float = spacing + index * (group_thickness + spacing)
 
 		for group_index in groups_keys_sorted:
-			#var accumulated: Dictionary = {}
-			var accumulated := 0.0
+			var acc_range := [0.0, 0.0]
 			for dataset in groups[group_index]:
 				if index >= dataset["values"].size():
 					continue
@@ -62,10 +61,25 @@ func _update() -> void:
 				var high := 0.0
 				# The next value to be added to accumulated
 				var next := 0.0
+				var next_hi := false
+
+				"""
+				Make everything a range, so when a value of 10 comes in make a range of [0, 10].
+				Only accumulate on one value
+				Make accumulate a range with a low and high of its own
+				"""
+
+				if typeof(value) == TYPE_ARRAY and value.size() == 1:
+					value = value[0]
 
 				match typeof(value):
 					TYPE_FLOAT, TYPE_INT:
-						low = accumulated
+						if value >= 0:
+							low = acc_range[1]
+							next_hi = true
+						else:
+							low = acc_range[0]
+
 						high = low + value
 						next = value
 					TYPE_ARRAY:
@@ -73,14 +87,15 @@ func _update() -> void:
 						# printerr.
 						if value.size() == 0:
 							continue
-						elif value.size() == 1:
-							low = accumulated
-							high = low + value[0]
-							next = value[0]
 						else:
-							low = accumulated + value[0]
-							high = low + value[1]
-							next = value[0] + value[1]
+							if value[0] >= 0:
+								low = acc_range[1] + value[0]
+								high = acc_range[1] + value[1]
+								next_hi = true
+							else:
+								low = acc_range[0] + value[0]
+								high = acc_range[0] + value[1]
+							next = value[1]
 					_:
 						printerr("Invalid type for the value")
 
@@ -95,7 +110,10 @@ func _update() -> void:
 					bar, background_color
 				)
 
-				accumulated += next
+				if next_hi:
+					acc_range[1] += next
+				else:
+					acc_range[0] += next
 
 
 func _process(delta: float) -> void:
