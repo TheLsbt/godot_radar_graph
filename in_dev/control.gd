@@ -20,7 +20,7 @@ func _init() -> void:
 	})
 	add_data({
 		"label": "Dataset 3",
-		"values": [[10, 20], [5, 10], 100],
+		"values": [[10, 20], [5, 10], 50],
 		"group": 1,
 		"background_color": Color.DARK_ORANGE
 	})

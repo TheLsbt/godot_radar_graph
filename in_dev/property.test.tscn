@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3 uid="uid://dp3ftq5gkt58c"]
+
+[ext_resource type="Script" uid="uid://dnsvilxlms8xd" path="res://in_dev/property.test.gd" id="1_g325f"]
+
+[node name="Node" type="Node"]
+script = ExtResource("1_g325f")
+joint_count = 3
+joints/0/value = &"joints/0/value"
+joints/0/color = null
+joints/1/value = &"joints/1/value"
+joints/1/color = null
+joints/2/value = &"joints/2/value"
+joints/2/color = null
+joints/3/value = &"joints/3/value"
+joints/3/color = null
+joints/4/value = &"joints/4/value"
+joints/4/color = null
+
+[node name="ItemList" type="ItemList" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0
+item_count = 1

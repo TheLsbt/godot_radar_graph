@@ -16,21 +16,17 @@ func add_data(data: Dictionary) -> void:
 
 
 func _update() -> void:
-	var view_rect := Rect2(Vector2.ZERO, size)
+	var view_rect := Rect2(Vector2.ZERO, size / 2)
 
+	# Sort the groups so that they can be iterated over and stacked easier.
+	# NOTE: Groups currently copy the entire dataset but only storing the values and maybe
+	# 		the background_color would be more optimal.
 	var groups: Dictionary[int, Array] = {}
 	for dataset in _datasets:
 		groups.get_or_add(dataset.get("group", -1), []).append(dataset)
 
 	var groups_keys_sorted := groups.keys()
 	groups_keys_sorted.sort()
-
-	"""
-	There is a issue where the graph where when groups are calculated the accumulated values use
-	the biggest one even when they are in a different index. The best idea is to swap indexs and
-	groups so we loop through each group first and then step through the index.
-	SO: sorted groups -> group -> loop each index
-	"""
 
 	# First calculate the groups first
 	var group_thickness := group_seperation + (bar_thickness * groups.size())
@@ -41,7 +37,6 @@ func _update() -> void:
 
 	var total_items_width := index_count * group_thickness
 	var spacing = (view_rect.size.x - total_items_width) / (index_count + 1)
-
 
 	for index in index_count:
 		var pos: float = spacing + index * (group_thickness + spacing)
@@ -62,12 +57,6 @@ func _update() -> void:
 				# The next value to be added to accumulated
 				var next := 0.0
 				var next_hi := false
-
-				"""
-				Make everything a range, so when a value of 10 comes in make a range of [0, 10].
-				Only accumulate on one value
-				Make accumulate a range with a low and high of its own
-				"""
 
 				if typeof(value) == TYPE_ARRAY and value.size() == 1:
 					value = value[0]
