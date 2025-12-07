@@ -8,7 +8,7 @@ func _init() -> void:
 	add_scale("a", ScaleLocation.BOTTOM, {"as_index": {"count": 7}})
 	add_data({
 		"label": "Dataset 1",
-		"values": [10, 30, [40, 50]],
+		"values": [10, 30, [30, 50]],
 		"group": 0,
 		"background_color": Color.INDIAN_RED
 	})
@@ -26,7 +26,7 @@ func _init() -> void:
 	})
 	add_data({
 		"label": "Dataset 4",
-		"values": [10],
+		"values": [[20, 30], 20, 20],
 		"group": 1,
 		"background_color": Color.PINK
 	})

@@ -43,80 +43,59 @@ func _update() -> void:
 	var spacing = (view_rect.size.x - total_items_width) / (index_count + 1)
 
 
-	for i in index_count:
-		var pos: float = spacing + i * (group_thickness + spacing)
+	for index in index_count:
+		var pos: float = spacing + index * (group_thickness + spacing)
 
-		for d in groups_keys_sorted:
-
-			var accumulated_value := 0.0
-
-			for g in groups[d].size():
-				var group: Dictionary = groups[d][g]
-
-				# Skip becuase there is no value available for the current index
-				if i >= group["values"].size():
+		for group_index in groups_keys_sorted:
+			#var accumulated: Dictionary = {}
+			var accumulated := 0.0
+			for dataset in groups[group_index]:
+				if index >= dataset["values"].size():
 					continue
 
-				var value = group["values"][i]
+				var value = dataset["values"][index]
+				var background_color: Color = dataset.background_color
 
-				var range_begin: float = 0.0
-				var range_end: float = 0.0
+				# The begining value, this would be closest to 0
+				var low := 0.0
+				# The ending value, this would be furthest from 0
+				var high := 0.0
+				# The next value to be added to accumulated
+				var next := 0.0
 
-				var value_type = typeof(value)
-				if value_type == TYPE_ARRAY:
-					range_begin = accumulated_value + value[0]
-					range_end = range_begin + value[1]
-				elif value_type == TYPE_FLOAT or value_type == TYPE_INT:
-					range_begin = accumulated_value
-					range_end = accumulated_value + value
+				match typeof(value):
+					TYPE_FLOAT, TYPE_INT:
+						low = accumulated
+						high = low + value
+						next = value
+					TYPE_ARRAY:
+						# Skip becuase the value isnt valid, might be a good idea to throw a
+						# printerr.
+						if value.size() == 0:
+							continue
+						elif value.size() == 1:
+							low = accumulated
+							high = low + value[0]
+							next = value[0]
+						else:
+							low = accumulated + value[0]
+							high = low + value[1]
+							next = value[0] + value[1]
+					_:
+						printerr("Invalid type for the value")
 
-				#print(type_string(typeof(value)))
-
-				var map_begin = remap(range_begin / max_value, 0, 1, 1, 0) * view_rect.end.y
-				var map_end = remap(range_end / max_value, 0, 1, 1, 0) * view_rect.end.y
-
-
-				var color: Color = group.background_color
-				draw_circle(
-					Vector2(pos + (bar_seperation + bar_thickness) * d, map_begin),
-					4, color
-					)
-				draw_circle(
-					Vector2(pos + (bar_seperation + bar_thickness) * d, map_end),
-					4, Color(color, 0.5)
-					)
+				var pxlow := remap(low / max_value, 0, 1, 1, 0) * view_rect.end.y
+				var pxhigh := remap(high / max_value, 0, 1, 1, 0) * view_rect.end.y
 
 				var bar := Rect2(
-					Vector2(pos + (bar_seperation + bar_thickness) * d, map_end),
-					Vector2(bar_thickness, map_begin - map_end)
+					Vector2(pos + (bar_seperation + bar_thickness) * group_index, pxhigh),
+					Vector2(bar_thickness, pxlow - pxhigh)
+					)
+				draw_rect(
+					bar, background_color
 				)
-				draw_rect(bar, Color(color, 0.5))
 
-				accumulated_value += range_end
-
-
-				#var bar := Rect2(
-				#Vector2(pos + (bar_seperation + bar_thickness) * (d - 1), view_rect.position.y),
-				#Vector2(
-					#bar_thickness,
-					#remap((min_value + range_end) / max_value, 0, 1, 1, 0) * view_rect.end.y)
-				#)
-#
-				#bar.position.y =\
-					#remap((min_value + (range_begin  - range_end)) / max_value, 0, 1, 1, 0) * view_rect.end.y
-
-
-
-				# TODO: Make accumulated value also a range with a upper and lower.
-				"""
-				If the range_begin is less than the lower range we move the lower range down
-				Otherwise we move the upper up.
-				"""
-
-
-
-	# Calculate the bounding box for each direction
-	pass
+				accumulated += next
 
 
 func _process(delta: float) -> void:
