@@ -1,9 +1,8 @@
 @tool
 extends "./2axis_graph.gd"
 
-# TODO: Make this calculated automatically based on the data passes into the script.
-@export_group("Group")
-@export var group_seperation: float = 20.0
+# Make styling default here and customizable in a dataset.
+
 @export_group("Bar")
 @export var bar_seperation: float = 5.0
 @export var bar_thickness: float = 30
@@ -16,7 +15,14 @@ func add_data(data: Dictionary) -> void:
 
 
 func _update() -> void:
-	var view_rect := Rect2(Vector2.ZERO, size / 2)
+	var full_rect := Rect2(Vector2.ZERO, size)
+	# Calculate the time (x) scale
+	var xscale := Rect2(Vector2(0, full_rect.end.y - 20), Vector2(full_rect.end.x, 20))
+	draw_rect(xscale, Color(Color.PALE_VIOLET_RED, 0.5))
+
+	# TODO: Calculate the grid line
+
+	var view_rect := Rect2(Vector2.ZERO, Vector2(full_rect.size.x, full_rect.size.y - 20))
 
 	# Sort the groups so that they can be iterated over and stacked easier.
 	# NOTE: Groups currently copy the entire dataset but only storing the values and maybe
@@ -29,7 +35,7 @@ func _update() -> void:
 	groups_keys_sorted.sort()
 
 	# First calculate the groups first
-	var group_thickness := group_seperation + (bar_thickness * groups.size())
+	var group_thickness := bar_seperation + (bar_thickness * groups.size())
 
 	var index_count: int = 3
 	var min_value := 0.0
