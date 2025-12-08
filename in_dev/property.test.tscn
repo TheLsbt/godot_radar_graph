@@ -4,17 +4,7 @@
 
 [node name="Node" type="Node"]
 script = ExtResource("1_g325f")
-joint_count = 3
-joints/0/value = &"joints/0/value"
-joints/0/color = null
-joints/1/value = &"joints/1/value"
-joints/1/color = null
-joints/2/value = &"joints/2/value"
-joints/2/color = null
-joints/3/value = &"joints/3/value"
-joints/3/color = null
-joints/4/value = &"joints/4/value"
-joints/4/color = null
+_item_count = 0
 
 [node name="ItemList" type="ItemList" parent="."]
 offset_right = 40.0
