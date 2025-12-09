@@ -43,8 +43,13 @@ func _update() -> void:
 
 	var segment := view_rect.size.x / index_count
 
+	var xscale_markers: PackedFloat32Array = []
 
 	for index in index_count:
+
+		var xscale_marker := (segment * index)
+		xscale_markers.append(xscale_marker)
+
 		var pos: float = (segment * index) + (segment / 2) - (group_thickness / 2)
 
 		for group_index in groups_keys_sorted:
@@ -109,6 +114,10 @@ func _update() -> void:
 					acc_range[1] += next
 				else:
 					acc_range[0] += next
+
+	xscale_markers.append(view_rect.end.x)
+	for x in xscale_markers:
+		draw_circle(Vector2(x, view_rect.end.y), 4, Color.PALE_TURQUOISE)
 
 
 func _process(delta: float) -> void:
