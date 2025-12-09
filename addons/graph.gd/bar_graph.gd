@@ -41,11 +41,11 @@ func _update() -> void:
 	var min_value := 0.0
 	var max_value := 100.0
 
-	var total_items_width := index_count * group_thickness
-	var spacing = (view_rect.size.x - total_items_width) / (index_count + 1)
+	var segment := view_rect.size.x / index_count
+
 
 	for index in index_count:
-		var pos: float = spacing + index * (group_thickness + spacing)
+		var pos: float = (segment * index) + (segment / 2) - (group_thickness / 2)
 
 		for group_index in groups_keys_sorted:
 			var acc_range := [0.0, 0.0]
