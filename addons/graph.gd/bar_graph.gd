@@ -7,7 +7,10 @@ extends "./2axis_graph.gd"
 @export var bar_seperation: float = 5.0
 @export var bar_thickness: float = 30
 
+var _default_font := ThemeDB.fallback_font
+var _default_font_size := ThemeDB.fallback_font_size
 var _datasets: Array[Dictionary] = []
+var _config: Dictionary = {}
 
 
 func add_data(data: Dictionary) -> void:
