@@ -22,15 +22,99 @@ func add_data(data: Dictionary) -> void:
 	_datasets.append(data)
 
 
-func _update() -> void:
-	var full_rect := Rect2(Vector2.ZERO, size)
-	# Calculate the time (x) scale
-	var xscale := Rect2(Vector2(0, full_rect.end.y - 20), Vector2(full_rect.end.x, 20))
-	draw_rect(xscale, Color(Color.PALE_VIOLET_RED, 0.5))
+func _callback_get_tick_value(value: float, tick: int, ticks: PackedFloat32Array) -> String:
+	return str(value)
 
+
+## Returns an array with two elements, where [0] is the x scale and [1] is the y scale's bounds.
+func get_scales() -> Array[Rect2]:
+	var yscale: Dictionary = _config.get("yscale", {})
+	var font: Font = yscale.get("font", _default_font)
+	var font_size: int = yscale.get("font_size", _default_font_size)
+
+	# Calculate the y scale.
+	var minimum := 0.0
+	# First calculate the biggest text size, we are looking for the width. Height come in useful
+	# for calculating this controls minimum_size
+	for i in step_count + 1:
+		var value := max_value / step_count * i
+		var title := _callback_get_tick_value(value, -1, [])
+		var title_size :=\
+			font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_RIGHT, -1, font_size)
+		minimum = maxi(minimum, title_size.x)
+
+	var yscale_size := Vector2(minimum, size.y)
+
+	# Calculate the x scale first.
+	minimum = 0.0
+
+	var segment := (size.x - yscale_size.x) / index_count
+
+	var xscale: Dictionary = _config.get("xscale", {})
+	var titles: Array = xscale.get("title", [])
+	if titles.size() == 0:
+		printerr("Cannot calculate xscale bounds, no title.")
+		return []
+
+	font = xscale.get("font", _default_font)
+	font_size = xscale.get("font_size", _default_font_size)
+	for index in index_count:
+		var title: String = titles[wrapi(index, 0, titles.size())]
+		var title_size :=\
+			font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_CENTER, segment, font_size)
+		minimum = maxi(minimum, title_size.y)
+
+	var xscale_size := Vector2(size.x, minimum)
+
+	var xscale_rect := Rect2(
+		Vector2(yscale_size.x, size.y - xscale_size.y), Vector2(size.x - yscale_size.x, xscale_size.y)
+	)
+	#draw_rect(xscale_rect, Color.PALE_VIOLET_RED)
+	var yscale_rect := Rect2(
+		Vector2.ZERO, Vector2(yscale_size.x, size.y - xscale_size.y)
+	)
+	#draw_rect(yscale_rect, Color.LIME_GREEN)
+	return [xscale_rect, yscale_rect]
+
+
+func get_view_rect() -> Rect2:
+	var scales := get_scales()
+	var rect := Rect2(
+		Vector2(scales[1].size.x, 0), Vector2(size.x - scales[1].size.x, size.y - scales[0].size.y),
+	)
+	return rect
+
+
+func get_xscale_ticks() -> PackedFloat32Array:
+	var ticks: PackedFloat32Array = []
+
+	var view_rect := get_view_rect()
+	var segment := view_rect.size.x / index_count
+
+	for index in index_count + 1:
+		ticks.append(segment * index)
+
+	return ticks
+
+
+func get_yscale_ticks() -> PackedFloat32Array:
+	var ticks: PackedFloat32Array = []
+
+	var view_rect := get_view_rect()
+	var segment := view_rect.size.y / step_count
+
+	for index in step_count + 1:
+		ticks.append(segment * index)
+
+	return ticks
+
+
+
+func _update() -> void:
 	# TODO: Calculate the grid line
 
-	var view_rect := Rect2(Vector2.ZERO, Vector2(full_rect.size.x, full_rect.size.y - 20))
+	var view_rect := get_view_rect()
+	draw_rect(view_rect, Color.MAGENTA, false, 3)
 
 	# Sort the groups so that they can be iterated over and stacked easier.
 	# NOTE: Groups currently copy the entire dataset but only storing the values and maybe
@@ -50,14 +134,9 @@ func _update() -> void:
 
 	var segment := view_rect.size.x / index_count
 
-	var xscale_markers: PackedFloat32Array = []
-
 	for index in index_count:
-
-		var xscale_marker := (segment * index)
-		xscale_markers.append(xscale_marker)
-
-		var pos: float = (segment * index) + (segment / 2) - (group_thickness / 2)
+		var pos: float = ((segment * index) + (segment / 2) - (group_thickness / 2))\
+			+ view_rect.position.x
 
 		for group_index in groups_keys_sorted:
 			var acc_range := [0.0, 0.0]
@@ -122,9 +201,12 @@ func _update() -> void:
 				else:
 					acc_range[0] += next
 
-	xscale_markers.append(view_rect.end.x)
-	for x in xscale_markers:
-		draw_circle(Vector2(x, view_rect.end.y), 4, Color.PALE_TURQUOISE)
+	for x in get_xscale_ticks():
+		draw_line(
+			Vector2(x + view_rect.position.x, view_rect.end.y),
+			Vector2(x + view_rect.position.x, view_rect.end.y + 8), Color.PALE_TURQUOISE, 2)
+	for y in get_yscale_ticks():
+		draw_line(Vector2(view_rect.position.x, y), Vector2(view_rect.position.x - 8, y), Color.PALE_TURQUOISE, 2)
 
 
 func _process(delta: float) -> void:

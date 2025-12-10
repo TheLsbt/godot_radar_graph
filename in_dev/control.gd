@@ -5,6 +5,11 @@ extends "res://addons/graph.gd/bar_graph.gd"
 
 
 func _init() -> void:
+	_config = {
+		"xscale": {
+			"title": ["a", "b"]
+		}
+	}
 	add_scale("a", ScaleLocation.BOTTOM, {"as_index": {"count": 7}})
 	add_data({
 		"label": "Dataset 1",
