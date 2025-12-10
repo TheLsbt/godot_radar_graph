@@ -3,6 +3,11 @@ extends "./2axis_graph.gd"
 
 # Make styling default here and customizable in a dataset.
 
+@export var index_count: int = 4
+
+@export_group("Range")
+@export var max_value: float = 100
+@export var step_count: int = 5
 @export_group("Bar")
 @export var bar_seperation: float = 5.0
 @export var bar_thickness: float = 30
@@ -40,7 +45,6 @@ func _update() -> void:
 	# First calculate the groups first
 	var group_thickness := bar_seperation + (bar_thickness * groups.size())
 
-	var index_count: int = 3
 	var min_value := 0.0
 	var max_value := 100.0
 
