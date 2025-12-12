@@ -6,6 +6,7 @@ extends "./2axis_graph.gd"
 @export var index_count: int = 4
 
 @export_group("Range")
+@export var min_value: float = 0
 @export var max_value: float = 100
 @export var step_count: int = 5
 @export_group("Bar")
@@ -16,6 +17,8 @@ var _default_font := ThemeDB.fallback_font
 var _default_font_size := ThemeDB.fallback_font_size
 var _datasets: Array[Dictionary] = []
 var _config: Dictionary = {}
+
+var _cache: Dictionary = {}
 
 
 func add_data(data: Dictionary) -> void:
