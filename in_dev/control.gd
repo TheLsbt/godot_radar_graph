@@ -13,13 +13,13 @@ func _init() -> void:
 	add_scale("a", ScaleLocation.BOTTOM, {"as_index": {"count": 7}})
 	add_data({
 		"label": "Dataset 1",
-		"values": [10, 30, [30, 50]],
+		"values": [10, [10, -10]],
 		"group": 0,
 		"background_color": Color.INDIAN_RED
 	})
 	add_data({
 		"label": "Dataset 2",
-		"values": [10, [30, 40], 30],
+		"values": [10],
 		"group": 1,
 		"background_color": Color.CADET_BLUE
 	})

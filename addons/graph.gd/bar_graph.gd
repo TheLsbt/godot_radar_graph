@@ -23,7 +23,7 @@ func add_data(data: Dictionary) -> void:
 
 
 func _callback_get_tick_value(value: float, tick: int, ticks: PackedFloat32Array) -> String:
-	return str(value)
+	return str(snappedf(value, 0.2))
 
 
 ## Returns an array with two elements, where [0] is the x scale and [1] is the y scale's bounds.
@@ -31,6 +31,8 @@ func get_scales() -> Array[Rect2]:
 	var yscale: Dictionary = _config.get("yscale", {})
 	var font: Font = yscale.get("font", _default_font)
 	var font_size: int = yscale.get("font_size", _default_font_size)
+
+	var yscale_title_cache := {}
 
 	# Calculate the y scale.
 	var minimum := 0.0
@@ -43,6 +45,7 @@ func get_scales() -> Array[Rect2]:
 			font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_RIGHT, -1, font_size)
 		minimum = maxi(minimum, title_size.x)
 
+	_cache["yscale.minimum_width"] = minimum
 	var yscale_size := Vector2(minimum, size.y)
 
 	# Calculate the x scale first.
@@ -100,8 +103,7 @@ func get_xscale_ticks() -> PackedFloat32Array:
 func get_yscale_ticks() -> PackedFloat32Array:
 	var ticks: PackedFloat32Array = []
 
-	var view_rect := get_view_rect()
-	var segment := view_rect.size.y / step_count
+	var segment := (max_value - min_value) / step_count
 
 	for index in step_count + 1:
 		ticks.append(segment * index)
@@ -129,9 +131,6 @@ func _update() -> void:
 	# First calculate the groups first
 	var group_thickness := bar_seperation + (bar_thickness * groups.size())
 
-	var min_value := 0.0
-	var max_value := 100.0
-
 	var segment := view_rect.size.x / index_count
 
 	for index in index_count:
@@ -139,7 +138,7 @@ func _update() -> void:
 			+ view_rect.position.x
 
 		for group_index in groups_keys_sorted:
-			var acc_range := [0.0, 0.0]
+			var acc_range: PackedFloat32Array = [0, 0]
 			for dataset in groups[group_index]:
 				if index >= dataset["values"].size():
 					continue
@@ -185,8 +184,8 @@ func _update() -> void:
 					_:
 						printerr("Invalid type for the value")
 
-				var pxlow := remap(low / max_value, 0, 1, 1, 0) * view_rect.end.y
-				var pxhigh := remap(high / max_value, 0, 1, 1, 0) * view_rect.end.y
+				var pxlow := remap((low - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.end.y
+				var pxhigh := remap((high - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.end.y
 
 				var bar := Rect2(
 					Vector2(pos + (bar_seperation + bar_thickness) * group_index, pxhigh),
@@ -205,8 +204,22 @@ func _update() -> void:
 		draw_line(
 			Vector2(x + view_rect.position.x, view_rect.end.y),
 			Vector2(x + view_rect.position.x, view_rect.end.y + 8), Color.PALE_TURQUOISE, 2)
-	for y in get_yscale_ticks():
-		draw_line(Vector2(view_rect.position.x, y), Vector2(view_rect.position.x - 8, y), Color.PALE_TURQUOISE, 2)
+
+	for value in get_yscale_ticks():
+		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
+
+		var pos := Vector2(view_rect.position.x, view_rect.size.y * percent)
+
+		_default_font.draw_multiline_string(
+			get_canvas_item(),
+			Vector2(0, view_rect.size.y * percent),
+			_callback_get_tick_value(value + min_value, -1, []),
+			HORIZONTAL_ALIGNMENT_LEFT,
+			_cache["yscale.minimum_width"],
+			_default_font_size
+		)
+
+		draw_line(pos, pos - Vector2(8, 0), Color.PALE_TURQUOISE, 2)
 
 
 func _process(delta: float) -> void:
