@@ -12,28 +12,58 @@ extends "./2axis_graph.gd"
 @export_group("Bar")
 @export var bar_seperation: float = 5.0
 @export var bar_thickness: float = 30
+@export_group("Scales")
+@export_subgroup("X Scale", "x_scale")
+@export var x_scale_titles: PackedStringArray = []
+@export var x_scale_font: Font
+@export var x_scale_font_size: int = 16
+@export_subgroup("Y Scale", "y_scale")
+@export var y_scale_font: Font
+@export var y_scale_font_size: int = 16
+
 
 var _default_font := ThemeDB.fallback_font
 var _default_font_size := ThemeDB.fallback_font_size
 var _datasets: Array[Dictionary] = []
-var _config: Dictionary = {}
 
 var _cache: Dictionary = {}
+var _is_dirty := false
 
 
 func add_data(data: Dictionary) -> void:
 	_datasets.append(data)
 
 
-func _callback_get_tick_value(value: float, tick: int, ticks: PackedFloat32Array) -> String:
+func _callback_get_tick_value(value: float) -> String:
 	return str(snappedf(value, 0.2))
 
 
+func _do_cache() -> void:
+	if not _is_dirty:
+		return
+
+	_cache.clear()
+
+	var font: Font = null
+	var font_size: int = -1
+
+	# Cache the y scale first
+	var yscale_minimum := -Vector2.INF
+	var yscale_ticks := get_yscale_ticks()
+	for i in yscale_ticks.size():
+		var value := yscale_ticks[i] + min_value
+		var title := _callback_get_tick_value(value)
+		var title_size := font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+		yscale_minimum = yscale_minimum.max(title_size)
+
+	_cache["yscale.minimum_width"] = yscale_minimum
+
+	_is_dirty = false
+
 ## Returns an array with two elements, where [0] is the x scale and [1] is the y scale's bounds.
 func get_scales() -> Array[Rect2]:
-	var yscale: Dictionary = _config.get("yscale", {})
-	var font: Font = yscale.get("font", _default_font)
-	var font_size: int = yscale.get("font_size", _default_font_size)
+	var font: Font = get_or_default("y_scale_font", _default_font)
+	var font_size: int = get_or_default("y_scale_font_size", _default_font_size)
 
 	var yscale_title_cache := {}
 
@@ -43,7 +73,7 @@ func get_scales() -> Array[Rect2]:
 	# for calculating this controls minimum_size
 	for i in step_count + 1:
 		var value := max_value / step_count * i
-		var title := _callback_get_tick_value(value, -1, [])
+		var title := _callback_get_tick_value(value)
 		var title_size :=\
 			font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_RIGHT, -1, font_size)
 		minimum = maxi(minimum, title_size.x)
@@ -56,14 +86,13 @@ func get_scales() -> Array[Rect2]:
 
 	var segment := (size.x - yscale_size.x) / index_count
 
-	var xscale: Dictionary = _config.get("xscale", {})
-	var titles: Array = xscale.get("title", [])
+	var titles: Array = x_scale_titles
 	if titles.size() == 0:
 		printerr("Cannot calculate xscale bounds, no title.")
 		return []
 
-	font = xscale.get("font", _default_font)
-	font_size = xscale.get("font_size", _default_font_size)
+	font = get_or_default("x_scale_font", _default_font)
+	font_size = get_or_default("x_scale_font", _default_font_size)
 	for index in index_count:
 		var title: String = titles[wrapi(index, 0, titles.size())]
 		var title_size :=\
@@ -116,6 +145,7 @@ func get_yscale_ticks() -> PackedFloat32Array:
 
 
 func _update() -> void:
+	_do_cache()
 	# TODO: Calculate the grid line
 
 	var view_rect := get_view_rect()
@@ -203,26 +233,51 @@ func _update() -> void:
 				else:
 					acc_range[0] += next
 
-	for x in get_xscale_ticks():
-		draw_line(
-			Vector2(x + view_rect.position.x, view_rect.end.y),
-			Vector2(x + view_rect.position.x, view_rect.end.y + 8), Color.PALE_TURQUOISE, 2)
+	var xscale_ticks := get_xscale_ticks()
 
+	var font: Font = get_or_default("x_scale_font", _default_font)
+	var font_size: int = get_or_default("x_scale_font_size", _default_font_size)
+
+	for i in xscale_ticks.size():
+		var x := xscale_ticks[i]
+		var pos := Vector2(x + view_rect.position.x, view_rect.end.y)
+
+		if i == xscale_ticks.size() - 1:
+			break
+
+		font.draw_multiline_string(
+			get_canvas_item(),
+			pos + Vector2(0, font.get_ascent(font_size)),
+			x_scale_titles[wrapi(i, 0, x_scale_titles.size())],
+			HORIZONTAL_ALIGNMENT_CENTER,
+			segment
+		)
+
+		draw_line(pos, pos + Vector2(0, 8), Color.PALE_TURQUOISE, 2)
+
+
+	var yscale_minimum_width: float = _cache.get("yscale.minimum_width", -1)
 	for value in get_yscale_ticks():
 		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
-
 		var pos := Vector2(view_rect.position.x, view_rect.size.y * percent)
 
 		_default_font.draw_multiline_string(
 			get_canvas_item(),
-			Vector2(0, view_rect.size.y * percent),
-			_callback_get_tick_value(value + min_value, -1, []),
+			Vector2(0, view_rect.size.y * percent + font.get_descent(font_size)),
+			_callback_get_tick_value(value + min_value),
 			HORIZONTAL_ALIGNMENT_LEFT,
-			_cache["yscale.minimum_width"],
+			yscale_minimum_width,
 			_default_font_size
 		)
 
 		draw_line(pos, pos - Vector2(8, 0), Color.PALE_TURQUOISE, 2)
+
+
+func get_or_default(property: StringName, default: Variant = null) -> Variant:
+	var value := get(property)
+	if value == null:
+		return default
+	return value
 
 
 func _process(delta: float) -> void:
