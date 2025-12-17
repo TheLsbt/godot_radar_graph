@@ -3,6 +3,8 @@ extends "./2axis_graph.gd"
 
 # Make styling default here and customizable in a dataset.
 
+# TODO: Pad the top of the graph to accomodate the y scale becuase it is half a font too tall.
+
 @export var index_count: int = 4
 
 @export_group("Range")
@@ -27,7 +29,7 @@ var _default_font_size := ThemeDB.fallback_font_size
 var _datasets: Array[Dictionary] = []
 
 var _cache: Dictionary = {}
-var _is_dirty := false
+var _is_dirty := true
 
 
 func add_data(data: Dictionary) -> void:
@@ -44,8 +46,10 @@ func _do_cache() -> void:
 
 	_cache.clear()
 
-	var font: Font = null
-	var font_size: int = -1
+	var font: Font = get_or_default("y_scale_font", _default_font)
+	var font_size: int = get_or_default("y_scale_font_size", _default_font_size)
+
+	var yscale_accumulated_height := 0.0
 
 	# Cache the y scale first
 	var yscale_minimum := -Vector2.INF
@@ -55,8 +59,12 @@ func _do_cache() -> void:
 		var title := _callback_get_tick_value(value)
 		var title_size := font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 		yscale_minimum = yscale_minimum.max(title_size)
+		yscale_accumulated_height += title_size.y
 
 	_cache["yscale.minimum_width"] = yscale_minimum
+
+	_cache["control.minimum_size"] = Vector2(yscale_minimum.x, yscale_accumulated_height)
+	update_minimum_size()
 
 	_is_dirty = false
 
@@ -65,7 +73,6 @@ func get_scales() -> Array[Rect2]:
 	var font: Font = get_or_default("y_scale_font", _default_font)
 	var font_size: int = get_or_default("y_scale_font_size", _default_font_size)
 
-	var yscale_title_cache := {}
 
 	# Calculate the y scale.
 	var minimum := 0.0
@@ -81,7 +88,7 @@ func get_scales() -> Array[Rect2]:
 	_cache["yscale.minimum_width"] = minimum
 	var yscale_size := Vector2(minimum, size.y)
 
-	# Calculate the x scale first.
+	# Calculate the x scale next.
 	minimum = 0.0
 
 	var segment := (size.x - yscale_size.x) / index_count
@@ -255,19 +262,21 @@ func _update() -> void:
 
 		draw_line(pos, pos + Vector2(0, 8), Color.PALE_TURQUOISE, 2)
 
+	font = get_or_default("y_scale_font", _default_font)
+	font_size = get_or_default("y_scale_font_size", _default_font_size)
 
 	var yscale_minimum_width: float = _cache.get("yscale.minimum_width", -1)
 	for value in get_yscale_ticks():
 		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
 		var pos := Vector2(view_rect.position.x, view_rect.size.y * percent)
 
-		_default_font.draw_multiline_string(
+		font.draw_multiline_string(
 			get_canvas_item(),
 			Vector2(0, view_rect.size.y * percent + font.get_descent(font_size)),
 			_callback_get_tick_value(value + min_value),
 			HORIZONTAL_ALIGNMENT_LEFT,
 			yscale_minimum_width,
-			_default_font_size
+			font_size
 		)
 
 		draw_line(pos, pos - Vector2(8, 0), Color.PALE_TURQUOISE, 2)
@@ -286,3 +295,8 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	_update()
+
+
+func _get_minimum_size() -> Vector2:
+	_do_cache()
+	return _cache["control.minimum_size"]
