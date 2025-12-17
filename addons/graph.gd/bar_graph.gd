@@ -286,20 +286,20 @@ func _update() -> void:
 	var yscale_ticks_pos_cache: Array = _cache["yscale_ticks_pos_cache"]
 	var yscale_ticks := get_yscale_ticks()
 	for i in yscale_ticks.size():
-		var value := yscale_ticks[i]
+		var value := yscale_ticks[i] + min_value
 		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
 		var pos: Vector2 = yscale_ticks_pos_cache[i]
 
 		font.draw_multiline_string(
 			get_canvas_item(),
 			Vector2(0, pos.y + font.get_descent(font_size)),
-			_callback_get_tick_value(value + min_value),
-			HORIZONTAL_ALIGNMENT_LEFT,
+			_callback_get_tick_value(value),
+			HORIZONTAL_ALIGNMENT_RIGHT,
 			yscale_minimum_width,
 			font_size
 		)
 
-		draw_line(pos, pos - Vector2(8, 0), Color.PALE_TURQUOISE, 2)
+		draw_line(pos, pos - Vector2(8, 0), Color.PALE_TURQUOISE, y_scale_tick_width)
 
 
 func get_or_default(property: StringName, default: Variant = null) -> Variant:
