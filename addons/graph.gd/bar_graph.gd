@@ -50,6 +50,23 @@ func _do_cache() -> void:
 
 	_cache.clear()
 
+	# Cache the groups.
+	# Sort the groups so that they can be iterated over and stacked easier.
+	# NOTE: Groups currently copy the entire dataset but only storing the values and maybe
+	# 		the background_color would be more optimal.
+	var groups: Dictionary[int, Array] = {}
+	for dataset in _datasets:
+		groups.get_or_add(dataset.get("group", -1), []).append(dataset)
+	_cache["groups"] = groups
+
+	var groups_keys_sorted := groups.keys()
+	groups_keys_sorted.sort()
+	_cache["groups_keys_sorted"] = groups_keys_sorted
+
+	# First calculate the groups first
+	var group_thickness := bar_seperation + (bar_thickness * groups.size())
+	_cache["group_thickness"] = group_thickness
+
 	var font: Font = get_or_default("y_scale_font", _default_font)
 	var font_size: int = get_or_default("y_scale_font_size", _default_font_size)
 
@@ -107,7 +124,17 @@ func _do_cache() -> void:
 	)
 	_cache["view_rect"] = view_rect
 
-	var cached_minimum_size := Vector2(yscale_minimum.x, yscale_accumulated_height)
+	var yscale_ticks_pos_cache := []
+	# This cannot be calculated at the same time as the yscale becuase it requires the view rect.
+	for value in get_yscale_ticks():
+		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
+		var pos := Vector2(view_rect.position.x, view_rect.size.y * percent)
+		yscale_ticks_pos_cache.append(pos)
+
+	_cache["yscale_ticks_pos_cache"] = yscale_ticks_pos_cache
+
+	var cached_minimum_size := Vector2(0, yscale_accumulated_height)
+	cached_minimum_size.x = yscale_minimum.x + (group_thickness * index_count)
 
 	_cache["control.minimum_size"] = cached_minimum_size
 	update_minimum_size()
@@ -143,7 +170,6 @@ func get_yscale_ticks() -> PackedFloat32Array:
 	return ticks
 
 
-
 func _update() -> void:
 	_do_cache()
 	# TODO: Calculate the grid line
@@ -151,18 +177,9 @@ func _update() -> void:
 	var view_rect := get_view_rect()
 	draw_rect(view_rect, Color.MAGENTA, false, 3)
 
-	# Sort the groups so that they can be iterated over and stacked easier.
-	# NOTE: Groups currently copy the entire dataset but only storing the values and maybe
-	# 		the background_color would be more optimal.
-	var groups: Dictionary[int, Array] = {}
-	for dataset in _datasets:
-		groups.get_or_add(dataset.get("group", -1), []).append(dataset)
-
-	var groups_keys_sorted := groups.keys()
-	groups_keys_sorted.sort()
-
-	# First calculate the groups first
-	var group_thickness := bar_seperation + (bar_thickness * groups.size())
+	var groups: Dictionary[int, Array] = _cache["groups"]
+	var groups_keys_sorted: Array = _cache["groups_keys_sorted"]
+	var group_thickness: float = _cache["group_thickness"]
 
 	var segment := view_rect.size.x / index_count
 
@@ -259,9 +276,12 @@ func _update() -> void:
 	font_size = get_or_default("y_scale_font_size", _default_font_size)
 
 	var yscale_minimum_width: float = _cache.get("yscale.minimum_width", -1)
-	for value in get_yscale_ticks():
+	var yscale_ticks_pos_cache: Array = _cache["yscale_ticks_pos_cache"]
+	var yscale_ticks := get_yscale_ticks()
+	for i in yscale_ticks.size():
+		var value := yscale_ticks[i]
 		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
-		var pos := Vector2(view_rect.position.x, view_rect.size.y * percent)
+		var pos: Vector2 = yscale_ticks_pos_cache[i]
 
 		font.draw_multiline_string(
 			get_canvas_item(),
