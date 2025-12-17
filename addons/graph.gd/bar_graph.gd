@@ -84,6 +84,10 @@ func _do_cache() -> void:
 		yscale_accumulated_height += title_size.y
 
 	_cache["yscale.minimum_width"] = yscale_minimum.x
+	var ysm_title := _callback_get_tick_value(yscale_ticks[0] + min_value)
+	var ysm_title_size := font.get_string_size(
+		ysm_title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+	var yscale_safe_margin := ysm_title_size.y / 2
 
 	if x_scale_titles.size() == 0:
 		printerr("Cannot cache x scale, cache may be incomplete.")
@@ -106,21 +110,21 @@ func _do_cache() -> void:
 
 
 	var xscale_rect := Rect2(
-		Vector2(yscale_minimum.x, size.y - xscale_minimum.y),
+		Vector2(yscale_minimum.x, (size.y - xscale_minimum.y) + yscale_safe_margin),
 		Vector2(xscale_width, xscale_minimum.y)
 	)
 	_cache["xscale_rect"] = xscale_rect
 
 	#draw_rect(xscale_rect, Color.PALE_VIOLET_RED)
 	var yscale_rect := Rect2(
-		Vector2.ZERO,
+		Vector2(0, yscale_safe_margin),
 		Vector2(yscale_minimum.x, size.y - xscale_minimum.y)
 	)
 	_cache["yscale_rect"] = yscale_rect
 
 
 	var view_rect := Rect2(
-		Vector2(yscale_rect.size.x, 0), Vector2(size.x - yscale_rect.size.x, size.y - xscale_rect.size.y),
+		Vector2(yscale_rect.size.x, yscale_safe_margin), Vector2(size.x - yscale_rect.size.x, size.y - xscale_rect.size.y - yscale_safe_margin),
 	)
 	_cache["view_rect"] = view_rect
 
@@ -128,13 +132,14 @@ func _do_cache() -> void:
 	# This cannot be calculated at the same time as the yscale becuase it requires the view rect.
 	for value in get_yscale_ticks():
 		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
-		var pos := Vector2(view_rect.position.x, view_rect.size.y * percent)
+		var pos := Vector2(view_rect.position.x, view_rect.size.y * percent + yscale_safe_margin)
 		yscale_ticks_pos_cache.append(pos)
 
 	_cache["yscale_ticks_pos_cache"] = yscale_ticks_pos_cache
 
-	var cached_minimum_size := Vector2(0, yscale_accumulated_height)
+	var cached_minimum_size := Vector2.ZERO
 	cached_minimum_size.x = yscale_minimum.x + (group_thickness * index_count)
+	cached_minimum_size.y = yscale_accumulated_height + yscale_safe_margin + xscale_minimum.y
 
 	_cache["control.minimum_size"] = cached_minimum_size
 	update_minimum_size()
@@ -159,6 +164,7 @@ func get_xscale_ticks() -> PackedFloat32Array:
 	return ticks
 
 
+## Returns the steps in value space.
 func get_yscale_ticks() -> PackedFloat32Array:
 	var ticks: PackedFloat32Array = []
 
@@ -285,7 +291,7 @@ func _update() -> void:
 
 		font.draw_multiline_string(
 			get_canvas_item(),
-			Vector2(0, view_rect.size.y * percent + font.get_descent(font_size)),
+			Vector2(0, pos.y + font.get_descent(font_size)),
 			_callback_get_tick_value(value + min_value),
 			HORIZONTAL_ALIGNMENT_LEFT,
 			yscale_minimum_width,
