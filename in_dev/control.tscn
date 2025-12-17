@@ -7,7 +7,6 @@ offset_right = 800.0
 offset_bottom = 253.0
 
 [node name="Control" type="Control" parent="."]
-custom_minimum_size = Vector2(800, 0)
 layout_mode = 2
 script = ExtResource("1_mc3g1")
 index_count = 3

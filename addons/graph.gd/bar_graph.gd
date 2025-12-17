@@ -61,7 +61,7 @@ func _do_cache() -> void:
 		yscale_minimum = yscale_minimum.max(title_size)
 		yscale_accumulated_height += title_size.y
 
-	_cache["yscale.minimum_width"] = yscale_minimum
+	_cache["yscale.minimum_width"] = yscale_minimum.y
 
 	_cache["control.minimum_size"] = Vector2(yscale_minimum.x, yscale_accumulated_height)
 	update_minimum_size()
