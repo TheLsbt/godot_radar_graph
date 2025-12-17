@@ -22,6 +22,8 @@ extends "./2axis_graph.gd"
 @export_subgroup("Y Scale", "y_scale")
 @export var y_scale_font: Font
 @export var y_scale_font_size: int = 16
+@export var y_scale_tick_length := 8.0
+@export var y_scale_tick_width := 2.0
 
 
 var _default_font := ThemeDB.fallback_font
@@ -108,7 +110,6 @@ func _do_cache() -> void:
 			title, HORIZONTAL_ALIGNMENT_CENTER, xscale_column_segment, font_size)
 		xscale_minimum = xscale_minimum.max(title_size)
 
-
 	var xscale_rect := Rect2(
 		Vector2(yscale_minimum.x, (size.y - xscale_minimum.y) + yscale_safe_margin),
 		Vector2(xscale_width, xscale_minimum.y)
@@ -124,7 +125,7 @@ func _do_cache() -> void:
 
 
 	var view_rect := Rect2(
-		Vector2(yscale_rect.size.x, yscale_safe_margin), Vector2(size.x - yscale_rect.size.x, size.y - xscale_rect.size.y - yscale_safe_margin),
+		Vector2(yscale_rect.size.x + y_scale_tick_length, yscale_safe_margin), Vector2(size.x - yscale_rect.size.x - y_scale_tick_length, size.y - xscale_rect.size.y - yscale_safe_margin),
 	)
 	_cache["view_rect"] = view_rect
 
@@ -138,7 +139,7 @@ func _do_cache() -> void:
 	_cache["yscale_ticks_pos_cache"] = yscale_ticks_pos_cache
 
 	var cached_minimum_size := Vector2.ZERO
-	cached_minimum_size.x = yscale_minimum.x + (group_thickness * index_count)
+	cached_minimum_size.x = yscale_minimum.x + (group_thickness * index_count) + y_scale_tick_length
 	cached_minimum_size.y = yscale_accumulated_height + yscale_safe_margin + xscale_minimum.y
 
 	_cache["control.minimum_size"] = cached_minimum_size
