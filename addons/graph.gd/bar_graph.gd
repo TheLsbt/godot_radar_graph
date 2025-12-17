@@ -32,6 +32,10 @@ var _cache: Dictionary = {}
 var _is_dirty := true
 
 
+func _ready() -> void:
+	_is_dirty = true
+
+
 func add_data(data: Dictionary) -> void:
 	_datasets.append(data)
 
@@ -51,7 +55,8 @@ func _do_cache() -> void:
 
 	var yscale_accumulated_height := 0.0
 
-	# Cache the y scale first
+	# Cache the y scale first, information we get out of this includes the minimum height for the
+	# yscale as well as the minimum width.
 	var yscale_minimum := -Vector2.INF
 	var yscale_ticks := get_yscale_ticks()
 	for i in yscale_ticks.size():
@@ -61,70 +66,58 @@ func _do_cache() -> void:
 		yscale_minimum = yscale_minimum.max(title_size)
 		yscale_accumulated_height += title_size.y
 
-	_cache["yscale.minimum_width"] = yscale_minimum.y
+	_cache["yscale.minimum_width"] = yscale_minimum.x
 
-	_cache["control.minimum_size"] = Vector2(yscale_minimum.x, yscale_accumulated_height)
+	if x_scale_titles.size() == 0:
+		printerr("Cannot cache x scale, cache may be incomplete.")
+		return
+
+	# This determines the length of each column along xscale
+	var xscale_width := size.x - yscale_minimum.x
+	var xscale_column_segment := xscale_width / index_count
+
+	var xscale_minimum := -Vector2.INF
+
+	font = get_or_default("x_scale_font", _default_font)
+	font_size = get_or_default("x_scale_font_size", _default_font_size)
+
+	for index in index_count:
+		var title: String = x_scale_titles[wrapi(index, 0, x_scale_titles.size())]
+		var title_size := font.get_multiline_string_size(
+			title, HORIZONTAL_ALIGNMENT_CENTER, xscale_column_segment, font_size)
+		xscale_minimum = xscale_minimum.max(title_size)
+
+
+	var xscale_rect := Rect2(
+		Vector2(yscale_minimum.x, size.y - xscale_minimum.y),
+		Vector2(xscale_width, xscale_minimum.y)
+	)
+	_cache["xscale_rect"] = xscale_rect
+
+	#draw_rect(xscale_rect, Color.PALE_VIOLET_RED)
+	var yscale_rect := Rect2(
+		Vector2.ZERO,
+		Vector2(yscale_minimum.x, size.y - xscale_minimum.y)
+	)
+	_cache["yscale_rect"] = yscale_rect
+
+
+	var view_rect := Rect2(
+		Vector2(yscale_rect.size.x, 0), Vector2(size.x - yscale_rect.size.x, size.y - xscale_rect.size.y),
+	)
+	_cache["view_rect"] = view_rect
+
+	var cached_minimum_size := Vector2(yscale_minimum.x, yscale_accumulated_height)
+
+	_cache["control.minimum_size"] = cached_minimum_size
 	update_minimum_size()
 
 	_is_dirty = false
 
-## Returns an array with two elements, where [0] is the x scale and [1] is the y scale's bounds.
-func get_scales() -> Array[Rect2]:
-	var font: Font = get_or_default("y_scale_font", _default_font)
-	var font_size: int = get_or_default("y_scale_font_size", _default_font_size)
-
-
-	# Calculate the y scale.
-	var minimum := 0.0
-	# First calculate the biggest text size, we are looking for the width. Height come in useful
-	# for calculating this controls minimum_size
-	for i in step_count + 1:
-		var value := max_value / step_count * i
-		var title := _callback_get_tick_value(value)
-		var title_size :=\
-			font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_RIGHT, -1, font_size)
-		minimum = maxi(minimum, title_size.x)
-
-	_cache["yscale.minimum_width"] = minimum
-	var yscale_size := Vector2(minimum, size.y)
-
-	# Calculate the x scale next.
-	minimum = 0.0
-
-	var segment := (size.x - yscale_size.x) / index_count
-
-	var titles: Array = x_scale_titles
-	if titles.size() == 0:
-		printerr("Cannot calculate xscale bounds, no title.")
-		return []
-
-	font = get_or_default("x_scale_font", _default_font)
-	font_size = get_or_default("x_scale_font", _default_font_size)
-	for index in index_count:
-		var title: String = titles[wrapi(index, 0, titles.size())]
-		var title_size :=\
-			font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_CENTER, segment, font_size)
-		minimum = maxi(minimum, title_size.y)
-
-	var xscale_size := Vector2(size.x, minimum)
-
-	var xscale_rect := Rect2(
-		Vector2(yscale_size.x, size.y - xscale_size.y), Vector2(size.x - yscale_size.x, xscale_size.y)
-	)
-	#draw_rect(xscale_rect, Color.PALE_VIOLET_RED)
-	var yscale_rect := Rect2(
-		Vector2.ZERO, Vector2(yscale_size.x, size.y - xscale_size.y)
-	)
-	#draw_rect(yscale_rect, Color.LIME_GREEN)
-	return [xscale_rect, yscale_rect]
-
 
 func get_view_rect() -> Rect2:
-	var scales := get_scales()
-	var rect := Rect2(
-		Vector2(scales[1].size.x, 0), Vector2(size.x - scales[1].size.x, size.y - scales[0].size.y),
-	)
-	return rect
+	_do_cache()
+	return _cache["view_rect"]
 
 
 func get_xscale_ticks() -> PackedFloat32Array:
@@ -290,6 +283,7 @@ func get_or_default(property: StringName, default: Variant = null) -> Variant:
 
 
 func _process(delta: float) -> void:
+	_is_dirty = true
 	queue_redraw()
 
 
