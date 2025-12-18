@@ -3,15 +3,20 @@
 [ext_resource type="Script" uid="uid://2b2ft0xnp08p" path="res://in_dev/control.gd" id="1_mc3g1"]
 
 [node name="HBoxContainer" type="HBoxContainer"]
-offset_right = 644.0
+offset_right = 967.0
 offset_bottom = 287.0
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 2
+size_flags_horizontal = 3
 script = ExtResource("1_mc3g1")
 index_count = 3
 min_value = -100.0
-step_count = 10
+step_count = 20
 bar_seperation = 17.13
 bar_thickness = 91.08
 x_scale_titles = PackedStringArray("a", "b", "c")
+x_scale_tick_length = 36.32
+x_scale_tick_width = 1.0
+y_scale_tick_length = 24.015
+y_scale_tick_width = 1.0

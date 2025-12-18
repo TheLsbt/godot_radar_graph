@@ -19,6 +19,8 @@ extends "./2axis_graph.gd"
 @export var x_scale_titles: PackedStringArray = []
 @export var x_scale_font: Font
 @export var x_scale_font_size: int = 16
+@export var x_scale_tick_length := 8.0
+@export var x_scale_tick_width := 2.0
 @export_subgroup("Y Scale", "y_scale")
 @export var y_scale_font: Font
 @export var y_scale_font_size: int = 16
@@ -191,7 +193,7 @@ func _update() -> void:
 	var segment := view_rect.size.x / index_count
 
 	for index in index_count:
-		var pos: float = ((segment * index) + (segment / 2) - (group_thickness / 2))\
+		var pos: float = ((segment * index) + (segment / 2) - (group_thickness / 2)) \
 			+ view_rect.position.x
 
 		for group_index in groups_keys_sorted:
@@ -241,12 +243,12 @@ func _update() -> void:
 					_:
 						printerr("Invalid type for the value")
 
-				var pxlow := remap((low - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.end.y
-				var pxhigh := remap((high - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.end.y
+				var pxlow := remap((low - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.size.y
+				var pxhigh := remap((high - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.size.y
 
 				var bar := Rect2(
-					Vector2(pos + (bar_seperation + bar_thickness) * group_index, pxhigh),
-					Vector2(bar_thickness, pxlow - pxhigh)
+					Vector2(pos + (bar_seperation + bar_thickness) * group_index, pxhigh + view_rect.position.y),
+					Vector2(bar_thickness, (pxlow - pxhigh))
 					)
 				draw_rect(
 					bar, background_color
@@ -261,10 +263,14 @@ func _update() -> void:
 
 	var font: Font = get_or_default("x_scale_font", _default_font)
 	var font_size: int = get_or_default("x_scale_font_size", _default_font_size)
+	var xscale_grid: PackedVector2Array = []
 
 	for i in xscale_ticks.size():
 		var x := xscale_ticks[i]
 		var pos := Vector2(x + view_rect.position.x, view_rect.end.y)
+
+		xscale_grid.append(pos)
+		xscale_grid.append(Vector2(pos.x, view_rect.position.y))
 
 		if i == xscale_ticks.size() - 1:
 			break
@@ -277,7 +283,7 @@ func _update() -> void:
 			segment
 		)
 
-		draw_line(pos, pos + Vector2(0, 8), Color.PALE_TURQUOISE, 2)
+		draw_line(pos, pos + Vector2(0, x_scale_tick_length), Color.PALE_TURQUOISE, x_scale_tick_width)
 
 	font = get_or_default("y_scale_font", _default_font)
 	font_size = get_or_default("y_scale_font_size", _default_font_size)
@@ -285,10 +291,15 @@ func _update() -> void:
 	var yscale_minimum_width: float = _cache.get("yscale.minimum_width", -1)
 	var yscale_ticks_pos_cache: Array = _cache["yscale_ticks_pos_cache"]
 	var yscale_ticks := get_yscale_ticks()
+	var yscale_grid: PackedVector2Array = []
+
 	for i in yscale_ticks.size():
 		var value := yscale_ticks[i] + min_value
 		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
 		var pos: Vector2 = yscale_ticks_pos_cache[i]
+
+		yscale_grid.append(pos)
+		yscale_grid.append(Vector2(view_rect.end.x, pos.y))
 
 		font.draw_multiline_string(
 			get_canvas_item(),
@@ -299,8 +310,10 @@ func _update() -> void:
 			font_size
 		)
 
-		draw_line(pos, pos - Vector2(8, 0), Color.PALE_TURQUOISE, y_scale_tick_width)
+		draw_line(pos, pos - Vector2(y_scale_tick_length, 0), Color.PALE_TURQUOISE, y_scale_tick_width)
 
+	draw_multiline(yscale_grid, Color.LIGHT_GRAY, y_scale_tick_width)
+	draw_multiline(xscale_grid, Color.LIGHT_GRAY, x_scale_tick_width)
 
 func get_or_default(property: StringName, default: Variant = null) -> Variant:
 	var value := get(property)
