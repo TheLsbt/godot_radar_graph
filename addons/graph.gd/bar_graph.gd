@@ -19,11 +19,16 @@ extends "./2axis_graph.gd"
 @export var x_scale_font_size: int = 16
 @export var x_scale_tick_length := 8.0
 @export var x_scale_tick_width := 2.0
+@export var x_scale_tick_color := Color.WHITE
 @export_subgroup("Y Scale", "y_scale")
 @export var y_scale_font: Font
 @export var y_scale_font_size: int = 16
 @export var y_scale_tick_length := 8.0
 @export var y_scale_tick_width := 2.0
+@export var y_scale_tick_color := Color.WHITE
+@export_group("Graph")
+@export var graph_boarder := Color.WHITE
+@export var graph_boarder_width := 2.0
 
 
 var _default_font := ThemeDB.fallback_font
@@ -154,15 +159,10 @@ func _do_cache() -> void:
 	_is_dirty = false
 
 
-func get_view_rect() -> Rect2:
-	_do_cache()
-	return _cache["view_rect"]
-
-
 func get_xscale_ticks() -> PackedFloat32Array:
 	var ticks: PackedFloat32Array = []
 
-	var view_rect := get_view_rect()
+	var view_rect: Rect2 = _cache["view_rect"]
 	var segment := view_rect.size.x / index_count
 
 	for index in index_count + 1:
@@ -184,11 +184,126 @@ func get_yscale_ticks() -> PackedFloat32Array:
 
 
 func _update() -> void:
-	_do_cache()
-	# TODO: Calculate the grid line
+	for layer in get_layers():
+		var method_name := layer + "_drawer"
+		if has_method(method_name):
+			call(method_name)
 
-	var view_rect := get_view_rect()
-	draw_rect(view_rect, Color.MAGENTA, false, 3)
+
+func get_or_default(property: StringName, default: Variant = null) -> Variant:
+	var value := get(property)
+	if value == null:
+		return default
+	return value
+
+
+func _process(delta: float) -> void:
+	_is_dirty = true
+	queue_redraw()
+
+
+func _draw() -> void:
+	_update()
+
+
+func _get_minimum_size() -> Vector2:
+	_do_cache()
+	return _cache["control.minimum_size"]
+
+
+## The order each layer is drawn. To override a specific layer create a function following [code]<layer_name>_drawer[/code]
+func get_layers() -> PackedStringArray:
+	return ["grid", "graph_boarder", "bars", "scales"]
+
+
+## Default drawer for the grid.
+func grid_drawer() -> void:
+	_do_cache()
+	var view_rect: Rect2 = _cache["view_rect"]
+	var xscale_ticks := get_xscale_ticks()
+	var xscale_grid: PackedVector2Array = []
+	for i in xscale_ticks.size():
+		var x := xscale_ticks[i]
+		var pos := Vector2(x + view_rect.position.x, view_rect.end.y)
+
+		xscale_grid.append(pos)
+		xscale_grid.append(Vector2(pos.x, view_rect.position.y))
+
+	var yscale_grid: PackedVector2Array = []
+	var yscale_ticks_pos_cache: Array = _cache["yscale_ticks_pos_cache"]
+	var yscale_ticks := get_yscale_ticks()
+	for i in yscale_ticks.size():
+		var pos: Vector2 = yscale_ticks_pos_cache[i]
+		yscale_grid.append(pos)
+		yscale_grid.append(Vector2(view_rect.end.x, pos.y))
+
+	draw_multiline(xscale_grid, x_scale_tick_color, x_scale_tick_width)
+	draw_multiline(yscale_grid, y_scale_tick_color, y_scale_tick_width)
+
+
+func graph_boarder_drawer() -> void:
+	_do_cache()
+	var view_rect: Rect2 = _cache["view_rect"]
+	draw_rect(view_rect, graph_boarder, false, graph_boarder_width)
+
+
+## Default drawer for both scales.
+func scales_drawer() -> void:
+	_do_cache()
+	var view_rect: Rect2 = _cache["view_rect"]
+	var xscale_ticks := get_xscale_ticks()
+
+	var segment := view_rect.size.x / index_count
+
+	var font: Font = get_or_default("x_scale_font", _default_font)
+	var font_size: int = get_or_default("x_scale_font_size", _default_font_size)
+
+	for i in xscale_ticks.size():
+		var x := xscale_ticks[i]
+		var pos := Vector2(x + view_rect.position.x, view_rect.end.y)
+
+		if i == xscale_ticks.size() - 1:
+			break
+
+		font.draw_multiline_string(
+			get_canvas_item(),
+			pos + Vector2(0, font.get_ascent(font_size)),
+			x_scale_titles[wrapi(i, 0, x_scale_titles.size())],
+			HORIZONTAL_ALIGNMENT_CENTER,
+			segment
+		)
+
+		draw_line(pos, pos + Vector2(0, x_scale_tick_length),x_scale_tick_color, x_scale_tick_width)
+
+	font = get_or_default("y_scale_font", _default_font)
+	font_size = get_or_default("y_scale_font_size", _default_font_size)
+
+	var yscale_minimum_width: float = _cache.get("yscale.minimum_width", -1)
+	var yscale_ticks_pos_cache: Array = _cache["yscale_ticks_pos_cache"]
+	var yscale_ticks := get_yscale_ticks()
+
+	for i in yscale_ticks.size():
+		var value := yscale_ticks[i] + min_value
+		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
+		var pos: Vector2 = yscale_ticks_pos_cache[i]
+
+		font.draw_multiline_string(
+			get_canvas_item(),
+			Vector2(0, pos.y + font.get_descent(font_size)),
+			_callback_get_tick_value(value),
+			HORIZONTAL_ALIGNMENT_RIGHT,
+			yscale_minimum_width,
+			font_size
+		)
+
+		draw_line(pos, pos - Vector2(y_scale_tick_length, 0), y_scale_tick_color, y_scale_tick_width)
+
+
+## Default drawer for all the bars.
+func bars_drawer() -> void:
+	_do_cache()
+
+	var view_rect: Rect2 = _cache["view_rect"]
 
 	var groups: Dictionary[int, Array] = _cache["groups"]
 	var groups_keys_sorted: Array = _cache["groups_keys_sorted"]
@@ -262,79 +377,3 @@ func _update() -> void:
 					acc_range[1] += next
 				else:
 					acc_range[0] += next
-
-	var xscale_ticks := get_xscale_ticks()
-
-	var font: Font = get_or_default("x_scale_font", _default_font)
-	var font_size: int = get_or_default("x_scale_font_size", _default_font_size)
-	var xscale_grid: PackedVector2Array = []
-
-	for i in xscale_ticks.size():
-		var x := xscale_ticks[i]
-		var pos := Vector2(x + view_rect.position.x, view_rect.end.y)
-
-		xscale_grid.append(pos)
-		xscale_grid.append(Vector2(pos.x, view_rect.position.y))
-
-		if i == xscale_ticks.size() - 1:
-			break
-
-		font.draw_multiline_string(
-			get_canvas_item(),
-			pos + Vector2(0, font.get_ascent(font_size)),
-			x_scale_titles[wrapi(i, 0, x_scale_titles.size())],
-			HORIZONTAL_ALIGNMENT_CENTER,
-			segment
-		)
-
-		draw_line(pos, pos + Vector2(0, x_scale_tick_length), Color.PALE_TURQUOISE, x_scale_tick_width)
-
-	font = get_or_default("y_scale_font", _default_font)
-	font_size = get_or_default("y_scale_font_size", _default_font_size)
-
-	var yscale_minimum_width: float = _cache.get("yscale.minimum_width", -1)
-	var yscale_ticks_pos_cache: Array = _cache["yscale_ticks_pos_cache"]
-	var yscale_ticks := get_yscale_ticks()
-	var yscale_grid: PackedVector2Array = []
-
-	for i in yscale_ticks.size():
-		var value := yscale_ticks[i] + min_value
-		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
-		var pos: Vector2 = yscale_ticks_pos_cache[i]
-
-		yscale_grid.append(pos)
-		yscale_grid.append(Vector2(view_rect.end.x, pos.y))
-
-		font.draw_multiline_string(
-			get_canvas_item(),
-			Vector2(0, pos.y + font.get_descent(font_size)),
-			_callback_get_tick_value(value),
-			HORIZONTAL_ALIGNMENT_RIGHT,
-			yscale_minimum_width,
-			font_size
-		)
-
-		draw_line(pos, pos - Vector2(y_scale_tick_length, 0), Color.PALE_TURQUOISE, y_scale_tick_width)
-
-	draw_multiline(yscale_grid, Color.LIGHT_GRAY, y_scale_tick_width)
-	draw_multiline(xscale_grid, Color.LIGHT_GRAY, x_scale_tick_width)
-
-func get_or_default(property: StringName, default: Variant = null) -> Variant:
-	var value := get(property)
-	if value == null:
-		return default
-	return value
-
-
-func _process(delta: float) -> void:
-	_is_dirty = true
-	queue_redraw()
-
-
-func _draw() -> void:
-	_update()
-
-
-func _get_minimum_size() -> Vector2:
-	_do_cache()
-	return _cache["control.minimum_size"]
