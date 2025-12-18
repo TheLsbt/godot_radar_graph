@@ -18,5 +18,4 @@ bar_thickness = 91.08
 x_scale_titles = PackedStringArray("a", "b", "c")
 x_scale_tick_length = 36.32
 x_scale_tick_width = 1.0
-y_scale_tick_length = 24.015
 y_scale_tick_width = 1.0

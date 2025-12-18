@@ -1,9 +1,7 @@
 @tool
 extends "./2axis_graph.gd"
 
-# Make styling default here and customizable in a dataset.
-
-# TODO: Pad the top of the graph to accomodate the y scale becuase it is half a font too tall.
+# TODO: Make styling default here and customizable in a dataset.
 
 @export var index_count: int = 4
 
@@ -35,6 +33,12 @@ var _datasets: Array[Dictionary] = []
 var _cache: Dictionary = {}
 var _is_dirty := true
 
+# TODO: Streamline overriding.
+"""
+Callbacks:
+	_get_ticks_callback() - for the scales
+	_get_tick_value_callback(value, tick: int, ticks: Array) - for the yscale
+"""
 
 func _ready() -> void:
 	_is_dirty = true
@@ -45,7 +49,7 @@ func add_data(data: Dictionary) -> void:
 
 
 func _callback_get_tick_value(value: float) -> String:
-	return str(snappedf(value, 0.2))
+	return str(snappedf(value, 0.01))
 
 
 func _do_cache() -> void:
@@ -127,7 +131,7 @@ func _do_cache() -> void:
 
 
 	var view_rect := Rect2(
-		Vector2(yscale_rect.size.x + y_scale_tick_length, yscale_safe_margin), Vector2(size.x - yscale_rect.size.x - y_scale_tick_length, size.y - xscale_rect.size.y - yscale_safe_margin),
+		Vector2(yscale_rect.size.x + y_scale_tick_length, yscale_safe_margin), Vector2(size.x - yscale_rect.size.x - y_scale_tick_length, size.y - maxf(xscale_minimum.y, x_scale_tick_length) - yscale_safe_margin),
 	)
 	_cache["view_rect"] = view_rect
 
@@ -142,7 +146,7 @@ func _do_cache() -> void:
 
 	var cached_minimum_size := Vector2.ZERO
 	cached_minimum_size.x = yscale_minimum.x + (group_thickness * index_count) + y_scale_tick_length
-	cached_minimum_size.y = yscale_accumulated_height + yscale_safe_margin + xscale_minimum.y
+	cached_minimum_size.y = yscale_accumulated_height + yscale_safe_margin + maxf(xscale_minimum.y, x_scale_tick_length)
 
 	_cache["control.minimum_size"] = cached_minimum_size
 	update_minimum_size()
