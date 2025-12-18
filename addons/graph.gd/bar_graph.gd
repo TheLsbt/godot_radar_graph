@@ -3,7 +3,7 @@ extends "./2axis_graph.gd"
 
 # TODO: Make styling default here and customizable in a dataset.
 
-@export var index_count: int = 4
+@export var index_count: int = 2
 
 @export_group("Range")
 @export var min_value: float = 0
@@ -46,6 +46,36 @@ func _init() -> void:
 	groups.clear()
 
 
+func _get_tooltip(at_position: Vector2) -> String:
+	_do_cache()
+
+	for b in _cache["bars"]:
+		var rect: Rect2 = b.rect
+		if rect.has_point(at_position):
+			var dataset_ref: int = b.dataset_ref
+			var dataset: Dictionary = datasets[dataset_ref]
+			var value: float = b.value
+
+			return str(dataset.label, ": ", value)
+
+	return ""
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_READY:
+		_is_dirty = true
+	elif what == NOTIFICATION_DRAW:
+		_update()
+	elif what == NOTIFICATION_RESIZED:
+		_is_dirty = true
+		queue_redraw()
+
+
+## Add a dataset, [param values] can be an array of floats, ints or array (containing at least 2 floats or ints).
+## [codeblock]
+## values = [1, 2.3, [1.0, 5]] # ✅ Every value is valid.
+## values = [true, 2.3, [8]] # ❎ Contains unsupported values such as a bool and only on element in a range.
+## [/codeblock]
 func add_data(label: String, values: Array, group: int, bar_color: Color) -> void:
 	var dataset: Dictionary = {
 		"label": label,
@@ -55,6 +85,8 @@ func add_data(label: String, values: Array, group: int, bar_color: Color) -> voi
 	}
 	datasets.append(dataset)
 	groups.get_or_add(group, PackedInt32Array()).append(datasets.size() - 1)
+	_is_dirty = true
+	queue_redraw()
 
 
 func _callback_get_tick_value(value: float) -> String:
@@ -66,11 +98,6 @@ func _do_cache() -> void:
 		return
 
 	_cache.clear()
-
-	# Cache the groups.
-	# Sort the groups so that they can be iterated over and stacked easier.
-	# NOTE: Groups currently copy the entire dataset but only storing the values and maybe
-	# 		the background_color would be more optimal.
 
 	var groups_keys_sorted := groups.keys()
 	groups_keys_sorted.sort()
@@ -160,6 +187,87 @@ func _do_cache() -> void:
 	_cache["control.minimum_size"] = cached_minimum_size
 	update_minimum_size()
 
+	# Calculating the bars should come last at least 90% of the time.
+	# They require alot of information (although could be scaled to a 0 - 1 value thus not needing view_rect).
+
+
+	var bars: Array[Dictionary] = []
+	var segment := view_rect.size.x / index_count
+
+	for index in index_count:
+		var pos: float = ((segment * index) + (segment / 2) - (group_thickness / 2)) \
+			+ view_rect.position.x
+
+		for group_index in groups_keys_sorted:
+			var acc_range: PackedFloat32Array = [0, 0]
+			for dataset_ref: int in groups[group_index]:
+				var dataset: Dictionary = datasets[dataset_ref]
+				if index >= dataset["values"].size():
+					continue
+
+				var value = dataset["values"][index]
+				var background_color: Color = Color(dataset.bar_color, 0.5)
+
+				# The begining value, this would be closest to 0
+				var low := 0.0
+				# The ending value, this would be furthest from 0
+				var high := 0.0
+				# The next value to be added to accumulated
+				var next := 0.0
+				var next_hi := false
+
+				if typeof(value) == TYPE_ARRAY and value.size() == 1:
+					value = value[0]
+
+				match typeof(value):
+					TYPE_FLOAT, TYPE_INT:
+						if value >= 0:
+							low = acc_range[1]
+							next_hi = true
+						else:
+							low = acc_range[0]
+
+						high = low + value
+						next = value
+					TYPE_ARRAY:
+						# Skip becuase the value isnt valid, might be a good idea to throw a
+						# printerr.
+						if value.size() == 0:
+							continue
+						else:
+							if value[0] >= 0:
+								low = acc_range[1] + value[0]
+								high = acc_range[1] + value[1]
+								next_hi = true
+							else:
+								low = acc_range[0] + value[0]
+								high = acc_range[0] + value[1]
+							next = value[1]
+					_:
+						printerr("Invalid type for the value")
+
+				var pxlow := remap((low - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.size.y
+				var pxhigh := remap((high - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.size.y
+
+				var bar_rect := Rect2(
+					Vector2(pos + (bar_seperation + bar_thickness) * group_index, pxhigh + view_rect.position.y),
+					Vector2(bar_thickness, (pxlow - pxhigh))
+					)
+
+				bars.append({
+					"rect": bar_rect.abs(),
+					"dataset_ref": dataset_ref,
+					"value": next
+				})
+
+				if next_hi:
+					acc_range[1] += next
+				else:
+					acc_range[0] += next
+
+	_cache["bars"] = bars
+
+
 	_is_dirty = false
 
 
@@ -188,6 +296,9 @@ func get_yscale_ticks() -> PackedFloat32Array:
 
 
 func _update() -> void:
+	if not is_node_ready():
+		return
+
 	_do_cache()
 	for layer in get_layers():
 		var method_name := layer + "_drawer"
@@ -201,9 +312,6 @@ func get_or_default(property: StringName, default: Variant = null) -> Variant:
 		return default
 	return value
 
-
-func _draw() -> void:
-	_update()
 
 
 func _get_minimum_size() -> Vector2:
@@ -302,78 +410,9 @@ func scales_drawer() -> void:
 ## Default drawer for all the bars.
 func bars_drawer() -> void:
 	_do_cache()
-
-	var view_rect: Rect2 = _cache["view_rect"]
-
-	var groups_keys_sorted: Array = _cache["groups_keys_sorted"]
-	var group_thickness: float = _cache["group_thickness"]
-
-	var segment := view_rect.size.x / index_count
-
-	for index in index_count:
-		var pos: float = ((segment * index) + (segment / 2) - (group_thickness / 2)) \
-			+ view_rect.position.x
-
-		for group_index in groups_keys_sorted:
-			var acc_range: PackedFloat32Array = [0, 0]
-			for dataset_ref: int in groups[group_index]:
-				var dataset: Dictionary = datasets[dataset_ref]
-				if index >= dataset["values"].size():
-					continue
-
-				var value = dataset["values"][index]
-				var background_color: Color = Color(dataset.bar_color, 0.5)
-
-				# The begining value, this would be closest to 0
-				var low := 0.0
-				# The ending value, this would be furthest from 0
-				var high := 0.0
-				# The next value to be added to accumulated
-				var next := 0.0
-				var next_hi := false
-
-				if typeof(value) == TYPE_ARRAY and value.size() == 1:
-					value = value[0]
-
-				match typeof(value):
-					TYPE_FLOAT, TYPE_INT:
-						if value >= 0:
-							low = acc_range[1]
-							next_hi = true
-						else:
-							low = acc_range[0]
-
-						high = low + value
-						next = value
-					TYPE_ARRAY:
-						# Skip becuase the value isnt valid, might be a good idea to throw a
-						# printerr.
-						if value.size() == 0:
-							continue
-						else:
-							if value[0] >= 0:
-								low = acc_range[1] + value[0]
-								high = acc_range[1] + value[1]
-								next_hi = true
-							else:
-								low = acc_range[0] + value[0]
-								high = acc_range[0] + value[1]
-							next = value[1]
-					_:
-						printerr("Invalid type for the value")
-
-				var pxlow := remap((low - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.size.y
-				var pxhigh := remap((high - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.size.y
-
-				var bar := Rect2(
-					Vector2(pos + (bar_seperation + bar_thickness) * group_index, pxhigh + view_rect.position.y),
-					Vector2(bar_thickness, (pxlow - pxhigh))
-					)
-				draw_rect(
-					bar, background_color
-				)
-
-				if next_hi:
-					acc_range[1] += next
-				else:
-					acc_range[0] += next
+	var bars: Array[Dictionary] = _cache["bars"]
+	for b in bars:
+		var rect: Rect2 = b.rect
+		var dataset_ref: int = b.dataset_ref
+		var bar_color: Color = datasets[dataset_ref].bar_color
+		draw_rect(rect, bar_color, true)
