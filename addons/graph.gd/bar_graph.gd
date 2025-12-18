@@ -33,24 +33,28 @@ extends "./2axis_graph.gd"
 
 var _default_font := ThemeDB.fallback_font
 var _default_font_size := ThemeDB.fallback_font_size
-var _datasets: Array[Dictionary] = []
 
 var _cache: Dictionary = {}
 var _is_dirty := true
 
-# TODO: Streamline overriding.
-"""
-Callbacks:
-	_get_ticks_callback() - for the scales
-	_get_tick_value_callback(value, tick: int, ticks: Array) - for the yscale
-"""
+var groups: Dictionary[int, PackedInt32Array] = {}
+var datasets: Array[Dictionary] = []
 
-func _ready() -> void:
+
+func _init() -> void:
 	_is_dirty = true
+	groups.clear()
 
 
-func add_data(data: Dictionary) -> void:
-	_datasets.append(data)
+func add_data(label: String, values: Array, group: int, bar_color: Color) -> void:
+	var dataset: Dictionary = {
+		"label": label,
+		"values": values,
+		"group": group,
+		"bar_color": bar_color
+	}
+	datasets.append(dataset)
+	groups.get_or_add(group, PackedInt32Array()).append(datasets.size() - 1)
 
 
 func _callback_get_tick_value(value: float) -> String:
@@ -67,10 +71,6 @@ func _do_cache() -> void:
 	# Sort the groups so that they can be iterated over and stacked easier.
 	# NOTE: Groups currently copy the entire dataset but only storing the values and maybe
 	# 		the background_color would be more optimal.
-	var groups: Dictionary[int, Array] = {}
-	for dataset in _datasets:
-		groups.get_or_add(dataset.get("group", -1), []).append(dataset)
-	_cache["groups"] = groups
 
 	var groups_keys_sorted := groups.keys()
 	groups_keys_sorted.sort()
@@ -136,7 +136,11 @@ func _do_cache() -> void:
 
 
 	var view_rect := Rect2(
-		Vector2(yscale_rect.size.x + y_scale_tick_length, yscale_safe_margin), Vector2(size.x - yscale_rect.size.x - y_scale_tick_length, size.y - maxf(xscale_minimum.y, x_scale_tick_length) - yscale_safe_margin),
+		Vector2(yscale_rect.size.x + y_scale_tick_length, yscale_safe_margin),
+		Vector2(
+			size.x - yscale_rect.size.x - y_scale_tick_length, size.y - \
+			maxf(xscale_minimum.y, x_scale_tick_length) - yscale_safe_margin
+		)
 	)
 	_cache["view_rect"] = view_rect
 
@@ -184,6 +188,7 @@ func get_yscale_ticks() -> PackedFloat32Array:
 
 
 func _update() -> void:
+	_do_cache()
 	for layer in get_layers():
 		var method_name := layer + "_drawer"
 		if has_method(method_name):
@@ -195,11 +200,6 @@ func get_or_default(property: StringName, default: Variant = null) -> Variant:
 	if value == null:
 		return default
 	return value
-
-
-func _process(delta: float) -> void:
-	_is_dirty = true
-	queue_redraw()
 
 
 func _draw() -> void:
@@ -305,7 +305,6 @@ func bars_drawer() -> void:
 
 	var view_rect: Rect2 = _cache["view_rect"]
 
-	var groups: Dictionary[int, Array] = _cache["groups"]
 	var groups_keys_sorted: Array = _cache["groups_keys_sorted"]
 	var group_thickness: float = _cache["group_thickness"]
 
@@ -317,12 +316,13 @@ func bars_drawer() -> void:
 
 		for group_index in groups_keys_sorted:
 			var acc_range: PackedFloat32Array = [0, 0]
-			for dataset in groups[group_index]:
+			for dataset_ref: int in groups[group_index]:
+				var dataset: Dictionary = datasets[dataset_ref]
 				if index >= dataset["values"].size():
 					continue
 
 				var value = dataset["values"][index]
-				var background_color: Color = dataset.background_color
+				var background_color: Color = Color(dataset.bar_color, 0.5)
 
 				# The begining value, this would be closest to 0
 				var low := 0.0
