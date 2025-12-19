@@ -3,53 +3,25 @@ extends "./2axis_graph.gd"
 
 # TODO: Make styling default here and customizable in a dataset.
 
-@export var index_count: int = 2
 
-@export_group("Range")
-@export var min_value: float = 0
-@export var max_value: float = 100
-@export var step_count: int = 5
 @export_group("Bar")
 @export var bar_seperation: float = 5.0
 @export var bar_thickness: float = 30
-@export_group("Scales")
-@export_subgroup("X Scale", "x_scale")
-@export var x_scale_titles: PackedStringArray = []
-@export var x_scale_font: Font
-@export var x_scale_font_size: int = 16
-@export var x_scale_tick_length := 8.0
-@export var x_scale_tick_width := 2.0
-@export var x_scale_tick_color := Color.WHITE
-@export_subgroup("Y Scale", "y_scale")
-@export var y_scale_font: Font
-@export var y_scale_font_size: int = 16
-@export var y_scale_tick_length := 8.0
-@export var y_scale_tick_width := 2.0
-@export var y_scale_tick_color := Color.WHITE
-@export_group("Graph")
-@export var graph_boarder := Color.WHITE
-@export var graph_boarder_width := 2.0
 
-
-var _default_font := ThemeDB.fallback_font
-var _default_font_size := ThemeDB.fallback_font_size
-
-var _cache: Dictionary = {}
-var _is_dirty := true
 
 var groups: Dictionary[int, PackedInt32Array] = {}
 var datasets: Array[Dictionary] = []
 
 
 func _init() -> void:
-	_is_dirty = true
+	cache_dirty = true
 	groups.clear()
 
 
 func _get_tooltip(at_position: Vector2) -> String:
-	_do_cache()
+	_check_cache()
 
-	for b in _cache["bars"]:
+	for b in cache["bars"]:
 		var rect: Rect2 = b.rect
 		if rect.has_point(at_position):
 			var dataset_ref: int = b.dataset_ref
@@ -63,11 +35,17 @@ func _get_tooltip(at_position: Vector2) -> String:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_READY:
-		_is_dirty = true
+		cache_dirty = true
 	elif what == NOTIFICATION_DRAW:
-		_update()
+		if not is_node_ready():
+			return
+
+		for layer in get_layers():
+			var method_name := layer + "_drawer"
+			if has_method(method_name):
+				call(method_name)
 	elif what == NOTIFICATION_RESIZED:
-		_is_dirty = true
+		cache_dirty = true
 		queue_redraw()
 
 
@@ -85,111 +63,77 @@ func add_data(label: String, values: Array, group: int, bar_color: Color) -> voi
 	}
 	datasets.append(dataset)
 	groups.get_or_add(group, PackedInt32Array()).append(datasets.size() - 1)
-	_is_dirty = true
+	cache_dirty = true
 	queue_redraw()
 
 
-func _callback_get_tick_value(value: float) -> String:
-	return str(snappedf(value, 0.01))
+## Sets the value of a specific dataset
+func set_value(dataset_ref: int, value_index: int, value) -> void:
+	var dataset: Dictionary = datasets[dataset_ref]
+	var values: Array = dataset["values"]
+	if values.size() - 1 <= value_index:
+		values.resize(value_index + 1)
+	values[value_index] = value
+	dataset["values"] = values
+	cache_dirty = true
+	queue_redraw()
 
 
-func _do_cache() -> void:
-	if not _is_dirty:
-		return
+## Returns an array or float or int.
+## Returns (min_value + max_value / 2) when [param value_index] is not valid.
+func get_value(dataset_ref: int, value_index: int):
+	var dataset: Dictionary = datasets[dataset_ref]
+	var values: Array = dataset["values"]
+	if value_index >= values.size() :
+		return (min_value + max_value) / 2
+	return values[value_index]
 
-	_cache.clear()
+
+## See [method get_value]. This method returns the 2nd index if the value is a range.
+func get_value_single(dataset_ref: int, value_index: int) -> float:
+	var value = get_value(dataset_ref, value_index)
+
+	match typeof(value):
+		TYPE_ARRAY:
+			if value.size() == 0:
+				return (min_value + max_value) / 2
+			elif value.size() == 1:
+				return value[0]
+			elif value.size() > 1:
+				return value[1]
+		TYPE_FLOAT or TYPE_INT:
+			return value
+
+	return (min_value + max_value) / 2
+
+
+
+func create_cache() -> void:
+	super()
 
 	var groups_keys_sorted := groups.keys()
 	groups_keys_sorted.sort()
-	_cache["groups_keys_sorted"] = groups_keys_sorted
+	cache["groups_keys_sorted"] = groups_keys_sorted
 
 	# First calculate the groups first
 	var group_thickness := bar_seperation + (bar_thickness * groups.size())
-	_cache["group_thickness"] = group_thickness
+	cache["group_thickness"] = group_thickness
 
-	var font: Font = get_or_default("y_scale_font", _default_font)
-	var font_size: int = get_or_default("y_scale_font_size", _default_font_size)
-
-	var yscale_accumulated_height := 0.0
-
-	# Cache the y scale first, information we get out of this includes the minimum height for the
-	# yscale as well as the minimum width.
-	var yscale_minimum := -Vector2.INF
-	var yscale_ticks := get_yscale_ticks()
-	for i in yscale_ticks.size():
-		var value := yscale_ticks[i] + min_value
-		var title := _callback_get_tick_value(value)
-		var title_size := font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-		yscale_minimum = yscale_minimum.max(title_size)
-		yscale_accumulated_height += title_size.y
-
-	_cache["yscale.minimum_width"] = yscale_minimum.x
-	var ysm_title := _callback_get_tick_value(yscale_ticks[0] + min_value)
-	var ysm_title_size := font.get_string_size(
-		ysm_title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-	var yscale_safe_margin := ysm_title_size.y / 2
-
-	if x_scale_titles.size() == 0:
-		printerr("Cannot cache x scale, cache may be incomplete.")
-		return
-
-	# This determines the length of each column along xscale
-	var xscale_width := size.x - yscale_minimum.x
-	var xscale_column_segment := xscale_width / index_count
-
-	var xscale_minimum := -Vector2.INF
-
-	font = get_or_default("x_scale_font", _default_font)
-	font_size = get_or_default("x_scale_font_size", _default_font_size)
-
-	for index in index_count:
-		var title: String = x_scale_titles[wrapi(index, 0, x_scale_titles.size())]
-		var title_size := font.get_multiline_string_size(
-			title, HORIZONTAL_ALIGNMENT_CENTER, xscale_column_segment, font_size)
-		xscale_minimum = xscale_minimum.max(title_size)
-
-	var xscale_rect := Rect2(
-		Vector2(yscale_minimum.x, (size.y - xscale_minimum.y) + yscale_safe_margin),
-		Vector2(xscale_width, xscale_minimum.y)
-	)
-	_cache["xscale_rect"] = xscale_rect
-
-	#draw_rect(xscale_rect, Color.PALE_VIOLET_RED)
-	var yscale_rect := Rect2(
-		Vector2(0, yscale_safe_margin),
-		Vector2(yscale_minimum.x, size.y - xscale_minimum.y)
-	)
-	_cache["yscale_rect"] = yscale_rect
-
-
-	var view_rect := Rect2(
-		Vector2(yscale_rect.size.x + y_scale_tick_length, yscale_safe_margin),
-		Vector2(
-			size.x - yscale_rect.size.x - y_scale_tick_length, size.y - \
-			maxf(xscale_minimum.y, x_scale_tick_length) - yscale_safe_margin
-		)
-	)
-	_cache["view_rect"] = view_rect
-
-	var yscale_ticks_pos_cache := []
-	# This cannot be calculated at the same time as the yscale becuase it requires the view rect.
-	for value in get_yscale_ticks():
-		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
-		var pos := Vector2(view_rect.position.x, view_rect.size.y * percent + yscale_safe_margin)
-		yscale_ticks_pos_cache.append(pos)
-
-	_cache["yscale_ticks_pos_cache"] = yscale_ticks_pos_cache
+	var view_rect: Rect2 = cache["view_rect"]
+	var yscale_minimum: Vector2 = cache["yscale_minimum"]
+	var yscale_accumulated_height: float = cache["yscale_accumulated_height"]
+	var yscale_safe_margin: float = cache["yscale_safe_margin"]
+	var xscale_minimum: Vector2 = cache["xscale_minimum"]
 
 	var cached_minimum_size := Vector2.ZERO
 	cached_minimum_size.x = yscale_minimum.x + (group_thickness * index_count) + y_scale_tick_length
 	cached_minimum_size.y = yscale_accumulated_height + yscale_safe_margin + maxf(xscale_minimum.y, x_scale_tick_length)
 
-	_cache["control.minimum_size"] = cached_minimum_size
+	cache["control.minimum_size"] = cached_minimum_size
 	update_minimum_size()
 
 	# Calculating the bars should come last at least 90% of the time.
 	# They require alot of information (although could be scaled to a 0 - 1 value thus not needing view_rect).
-
 
 	var bars: Array[Dictionary] = []
 	var segment := view_rect.size.x / index_count
@@ -265,58 +209,16 @@ func _do_cache() -> void:
 				else:
 					acc_range[0] += next
 
-	_cache["bars"] = bars
+	cache["bars"] = bars
 
 
-	_is_dirty = false
-
-
-func get_xscale_ticks() -> PackedFloat32Array:
-	var ticks: PackedFloat32Array = []
-
-	var view_rect: Rect2 = _cache["view_rect"]
-	var segment := view_rect.size.x / index_count
-
-	for index in index_count + 1:
-		ticks.append(segment * index)
-
-	return ticks
-
-
-## Returns the steps in value space.
-func get_yscale_ticks() -> PackedFloat32Array:
-	var ticks: PackedFloat32Array = []
-
-	var segment := (max_value - min_value) / step_count
-
-	for index in step_count + 1:
-		ticks.append(segment * index)
-
-	return ticks
-
-
-func _update() -> void:
-	if not is_node_ready():
-		return
-
-	_do_cache()
-	for layer in get_layers():
-		var method_name := layer + "_drawer"
-		if has_method(method_name):
-			call(method_name)
-
-
-func get_or_default(property: StringName, default: Variant = null) -> Variant:
-	var value := get(property)
-	if value == null:
-		return default
-	return value
+	cache_dirty = false
 
 
 
 func _get_minimum_size() -> Vector2:
-	_do_cache()
-	return _cache["control.minimum_size"]
+	_check_cache()
+	return cache["control.minimum_size"]
 
 
 ## The order each layer is drawn. To override a specific layer create a function following [code]<layer_name>_drawer[/code]
@@ -326,8 +228,8 @@ func get_layers() -> PackedStringArray:
 
 ## Default drawer for the grid.
 func grid_drawer() -> void:
-	_do_cache()
-	var view_rect: Rect2 = _cache["view_rect"]
+	_check_cache()
+	var view_rect: Rect2 = cache["view_rect"]
 	var xscale_ticks := get_xscale_ticks()
 	var xscale_grid: PackedVector2Array = []
 	for i in xscale_ticks.size():
@@ -338,7 +240,7 @@ func grid_drawer() -> void:
 		xscale_grid.append(Vector2(pos.x, view_rect.position.y))
 
 	var yscale_grid: PackedVector2Array = []
-	var yscale_ticks_pos_cache: Array = _cache["yscale_ticks_pos_cache"]
+	var yscale_ticks_pos_cache: Array = cache["yscale_ticks_pos_cache"]
 	var yscale_ticks := get_yscale_ticks()
 	for i in yscale_ticks.size():
 		var pos: Vector2 = yscale_ticks_pos_cache[i]
@@ -350,21 +252,21 @@ func grid_drawer() -> void:
 
 
 func graph_boarder_drawer() -> void:
-	_do_cache()
-	var view_rect: Rect2 = _cache["view_rect"]
+	_check_cache()
+	var view_rect: Rect2 = cache["view_rect"]
 	draw_rect(view_rect, graph_boarder, false, graph_boarder_width)
 
 
 ## Default drawer for both scales.
 func scales_drawer() -> void:
-	_do_cache()
-	var view_rect: Rect2 = _cache["view_rect"]
+	_check_cache()
+	var view_rect: Rect2 = cache["view_rect"]
 	var xscale_ticks := get_xscale_ticks()
 
 	var segment := view_rect.size.x / index_count
 
-	var font: Font = get_or_default("x_scale_font", _default_font)
-	var font_size: int = get_or_default("x_scale_font_size", _default_font_size)
+	var font: Font = get_or_default("x_scale_font", default_font)
+	var font_size: int = get_or_default("x_scale_font_size", default_font_size)
 
 	for i in xscale_ticks.size():
 		var x := xscale_ticks[i]
@@ -383,11 +285,11 @@ func scales_drawer() -> void:
 
 		draw_line(pos, pos + Vector2(0, x_scale_tick_length),x_scale_tick_color, x_scale_tick_width)
 
-	font = get_or_default("y_scale_font", _default_font)
-	font_size = get_or_default("y_scale_font_size", _default_font_size)
+	font = get_or_default("y_scale_font", default_font)
+	font_size = get_or_default("y_scale_font_size", default_font_size)
 
-	var yscale_minimum_width: float = _cache.get("yscale.minimum_width", -1)
-	var yscale_ticks_pos_cache: Array = _cache["yscale_ticks_pos_cache"]
+	var yscale_minimum_width: float = cache.get("yscale.minimum_width", -1)
+	var yscale_ticks_pos_cache: Array = cache["yscale_ticks_pos_cache"]
 	var yscale_ticks := get_yscale_ticks()
 
 	for i in yscale_ticks.size():
@@ -398,7 +300,7 @@ func scales_drawer() -> void:
 		font.draw_multiline_string(
 			get_canvas_item(),
 			Vector2(0, pos.y + font.get_descent(font_size)),
-			_callback_get_tick_value(value),
+			yscale_tick_to_title(value),
 			HORIZONTAL_ALIGNMENT_RIGHT,
 			yscale_minimum_width,
 			font_size
@@ -409,8 +311,8 @@ func scales_drawer() -> void:
 
 ## Default drawer for all the bars.
 func bars_drawer() -> void:
-	_do_cache()
-	var bars: Array[Dictionary] = _cache["bars"]
+	_check_cache()
+	var bars: Array[Dictionary] = cache["bars"]
 	for b in bars:
 		var rect: Rect2 = b.rect
 		var dataset_ref: int = b.dataset_ref
