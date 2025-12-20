@@ -39,6 +39,12 @@ var default_font: Font = ThemeDB.fallback_font
 var default_font_size: int = ThemeDB.fallback_font_size
 
 
+## A dynamic min value sets how the graph is rendered, this method is called at the begining of a
+## cache and thus needs to be deterministic and ready by cache time.
+func get_dynamic_min_max_value() -> PackedFloat32Array:
+	return []
+
+
 ## Returns the xscale ticks in view_rect space. Requires cache to be built.
 func get_xscale_ticks() -> PackedFloat32Array:
 	_check_cache()
@@ -58,7 +64,13 @@ func get_xscale_ticks() -> PackedFloat32Array:
 func get_yscale_ticks() -> PackedFloat32Array:
 	var ticks: PackedFloat32Array = []
 
-	var segment := (max_value - min_value) / step_count
+	var dynamic_min_max := get_dynamic_min_max_value()
+	var dynamic_min_value := dynamic_min_max[0]
+	var dynamic_max_value := dynamic_min_max[1]
+
+	var segment := (dynamic_max_value - dynamic_min_value) / step_count
+
+	print(dynamic_min_max)
 
 	for index in step_count + 1:
 		ticks.append(segment * index)
@@ -74,6 +86,10 @@ func yscale_tick_to_title(value: float) -> String:
 func create_cache() -> void:
 	cache.clear()
 
+	var dynamic_min_max := get_dynamic_min_max_value()
+	var dynamic_min_value := dynamic_min_max[0]
+	var dynamic_max_value := dynamic_min_max[1]
+
 	var font: Font = get_or_default("y_scale_font", default_font)
 	var font_size: int = get_or_default("y_scale_font_size", default_font)
 
@@ -84,14 +100,14 @@ func create_cache() -> void:
 	var yscale_minimum := -Vector2.INF
 	var yscale_ticks := get_yscale_ticks()
 	for i in yscale_ticks.size():
-		var value := yscale_ticks[i] + min_value
+		var value := yscale_ticks[i] + dynamic_min_value
 		var title := yscale_tick_to_title(value)
 		var title_size := font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 		yscale_minimum = yscale_minimum.max(title_size)
 		yscale_accumulated_height += title_size.y
 
 	cache["yscale.minimum_width"] = yscale_minimum.x
-	var ysm_title := yscale_tick_to_title(yscale_ticks[0] + min_value)
+	var ysm_title := yscale_tick_to_title(yscale_ticks[0] + dynamic_min_value)
 	var ysm_title_size := font.get_string_size(
 		ysm_title.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	var yscale_safe_margin := ysm_title_size.y / 2
@@ -141,7 +157,7 @@ func create_cache() -> void:
 	var yscale_ticks_pos_cache := []
 	# This cannot be calculated at the same time as the yscale becuase it requires the view rect.
 	for value in get_yscale_ticks():
-		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
+		var percent := remap((value) / (dynamic_max_value - dynamic_min_value), 0, 1, 1, 0)
 		var pos := Vector2(view_rect.position.x, view_rect.size.y * percent + yscale_safe_margin)
 		yscale_ticks_pos_cache.append(pos)
 

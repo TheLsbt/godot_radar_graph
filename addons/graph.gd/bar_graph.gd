@@ -2,6 +2,7 @@
 extends "./2axis_graph.gd"
 
 # TODO: Make styling default here and customizable in a dataset.
+# FIXME: Dynamic min_max is not using the accumulated value (I think, am too tired to debug)
 
 
 @export_group("Bar")
@@ -11,6 +12,10 @@ extends "./2axis_graph.gd"
 
 var groups: Dictionary[int, PackedInt32Array] = {}
 var datasets: Array[Dictionary] = []
+
+var _dynamic_min_value := 0.0
+var _dynamic_max_value := 0.0
+
 
 
 func _init() -> void:
@@ -108,8 +113,36 @@ func get_value_single(dataset_ref: int, value_index: int) -> float:
 
 
 
+func get_dynamic_min_max_value() -> PackedFloat32Array:
+	_dynamic_min_value = -50
+	_dynamic_max_value = 50
+
+	for d in datasets:
+
+		for value in d.get("values", []):
+			match typeof(value):
+				TYPE_ARRAY:
+					match value.size():
+						0:
+							continue
+						1:
+							_dynamic_min_value = min(_dynamic_min_value, value[0])
+							_dynamic_max_value = max(_dynamic_max_value, value[0])
+						_:
+							_dynamic_min_value = min(_dynamic_min_value, value[1])
+							_dynamic_max_value = max(_dynamic_max_value, value[1])
+				TYPE_FLOAT, TYPE_INT:
+					_dynamic_min_value = min(_dynamic_min_value, value)
+					_dynamic_max_value = max(_dynamic_max_value, value)
+
+	return PackedFloat32Array([_dynamic_min_value, _dynamic_max_value])
+
+
+
 func create_cache() -> void:
 	super()
+
+	get_dynamic_min_max_value()
 
 	var groups_keys_sorted := groups.keys()
 	groups_keys_sorted.sort()
@@ -190,8 +223,8 @@ func create_cache() -> void:
 					_:
 						printerr("Invalid type for the value")
 
-				var pxlow := remap((low - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.size.y
-				var pxhigh := remap((high - min_value) / (max_value - min_value), 0, 1, 1, 0) * view_rect.size.y
+				var pxlow := remap((low - _dynamic_min_value) / (_dynamic_max_value - _dynamic_min_value), 0, 1, 1, 0) * view_rect.size.y
+				var pxhigh := remap((high - _dynamic_min_value) / (_dynamic_max_value - _dynamic_min_value), 0, 1, 1, 0) * view_rect.size.y
 
 				var bar_rect := Rect2(
 					Vector2(pos + (bar_seperation + bar_thickness) * group_index, pxhigh + view_rect.position.y),
@@ -293,8 +326,8 @@ func scales_drawer() -> void:
 	var yscale_ticks := get_yscale_ticks()
 
 	for i in yscale_ticks.size():
-		var value := yscale_ticks[i] + min_value
-		var percent := remap((value) / (max_value - min_value), 0, 1, 1, 0)
+		var value := yscale_ticks[i] + _dynamic_min_value
+		var percent := remap((value) / (_dynamic_max_value - _dynamic_min_value), 0, 1, 1, 0)
 		var pos: Vector2 = yscale_ticks_pos_cache[i]
 
 		font.draw_multiline_string(
