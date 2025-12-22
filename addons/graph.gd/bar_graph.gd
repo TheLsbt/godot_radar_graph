@@ -114,29 +114,75 @@ func get_value_single(dataset_ref: int, value_index: int) -> float:
 
 
 func get_dynamic_min_max_value() -> PackedFloat32Array:
-	_dynamic_min_value = -50
-	_dynamic_max_value = 50
+	_dynamic_min_value = min_value
+	_dynamic_max_value = max_value
 
-	for d in datasets:
+	return [min_value, max_value]
 
-		for value in d.get("values", []):
-			match typeof(value):
-				TYPE_ARRAY:
-					match value.size():
-						0:
+	var groups_keys_sorted := groups.keys()
+	groups_keys_sorted.sort()
+
+	for index in index_count:
+		for group_index in groups_keys_sorted:
+
+			var acc_range: PackedFloat32Array = [0, 0]
+			for dataset_ref: int in groups[group_index]:
+				var dataset: Dictionary = datasets[dataset_ref]
+				if index >= dataset["values"].size():
+					continue
+
+				var value = dataset["values"][index]
+
+				# FIXME: Note, low and high should prob. be the average of min_value and max_value.
+				# The begining value, this would be closest to 0
+				var low := (min_value + max_value) / 2
+				# The ending value, this would be furthest from 0
+				var high := low
+				# The next value to be added to accumulated
+				var next := 0.0
+				var next_hi := false
+
+				if typeof(value) == TYPE_ARRAY and value.size() == 1:
+					value = value[0]
+
+				match typeof(value):
+					TYPE_FLOAT, TYPE_INT:
+						if value >= 0:
+							low = acc_range[1]
+							next_hi = true
+						else:
+							low = acc_range[0]
+
+						high = low + value
+						next = value
+					TYPE_ARRAY:
+						# Skip becuase the value isnt valid, might be a good idea to throw a
+						# printerr.
+						if value.size() == 0:
 							continue
-						1:
-							_dynamic_min_value = min(_dynamic_min_value, value[0])
-							_dynamic_max_value = max(_dynamic_max_value, value[0])
-						_:
-							_dynamic_min_value = min(_dynamic_min_value, value[1])
-							_dynamic_max_value = max(_dynamic_max_value, value[1])
-				TYPE_FLOAT, TYPE_INT:
-					_dynamic_min_value = min(_dynamic_min_value, value)
-					_dynamic_max_value = max(_dynamic_max_value, value)
+						else:
+							if value[0] >= 0:
+								low = acc_range[1] + value[0]
+								high = acc_range[1] + value[1]
+								next_hi = true
+							else:
+								low = acc_range[0] + value[0]
+								high = acc_range[0] + value[1]
+							next = value[1]
+					_:
+						printerr("Error calculating dynamic min max, invalid type for the value.")
 
-	return PackedFloat32Array([_dynamic_min_value, _dynamic_max_value])
+				if next_hi:
+					acc_range[1] += next
+				else:
+					acc_range[0] += next
 
+			print(acc_range)
+
+			_dynamic_min_value = min(_dynamic_min_value, acc_range[0])
+			_dynamic_max_value = max(_dynamic_max_value, acc_range[1])
+
+	return [_dynamic_min_value, _dynamic_max_value]
 
 
 func create_cache() -> void:
@@ -167,6 +213,8 @@ func create_cache() -> void:
 
 	# Calculating the bars should come last at least 90% of the time.
 	# They require alot of information (although could be scaled to a 0 - 1 value thus not needing view_rect).
+
+	var median := (min_value + max_value) / 2
 
 	var bars: Array[Dictionary] = []
 	var segment := view_rect.size.x / index_count
@@ -212,7 +260,7 @@ func create_cache() -> void:
 						if value.size() == 0:
 							continue
 						else:
-							if value[0] >= 0:
+							if value[1] >= median:
 								low = acc_range[1] + value[0]
 								high = acc_range[1] + value[1]
 								next_hi = true

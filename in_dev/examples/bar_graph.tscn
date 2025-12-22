@@ -18,7 +18,7 @@ size_flags_vertical = 3
 script = ExtResource("2_rt7ka")
 bar_thickness = 80.0
 index_count = 3
-min_value = -100.0
+min_value = -20.0
 x_scale_titles = PackedStringArray("a", "b")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]

@@ -8,9 +8,9 @@ const BarGraph := preload('uid://ybqd0uk8xfp4')
 
 
 func _ready() -> void:
-	bar_graph.add_data("Dataset 1", [[10,300], [10, -10]], 0, Color.INDIAN_RED)
+	bar_graph.add_data("Dataset 1", [[10,300], [10, -20]], 0, Color.INDIAN_RED)
 	bar_graph.add_data("Dataset 2", [[10,30], [0, -20]], 1, Color.CADET_BLUE)
-	bar_graph.add_data("Dataset 3", [[10,30], [0, -20]], 1, Color.DARK_GOLDENROD)
+	bar_graph.add_data("Dataset 3", [[10,30], [0, 300]], 1, Color(Color.DARK_GOLDENROD, 0.5))
 	bar_graph.add_data("Dataset 4", [[10,30], [0, -20]], 1, Color.PINK)
 
 
