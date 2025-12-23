@@ -10,7 +10,9 @@ extends Control
 @export_group("Range")
 @export var min_value: float = 0
 @export var max_value: float = 100
-@export var step_count: int = 5
+@export var step: float = 10.0
+@export var allow_dynamic_range := true
+@export var dynamic_range_steps := 0.0
 
 @export_group("Scales")
 @export_subgroup("X Scale", "x_scale")
@@ -68,10 +70,15 @@ func get_yscale_ticks() -> PackedFloat32Array:
 	var dynamic_min_value := dynamic_min_max[0]
 	var dynamic_max_value := dynamic_min_max[1]
 
-	var segment := (dynamic_max_value - dynamic_min_value) / step_count
+	var s := dynamic_min_value
+	while s <= dynamic_max_value:
+		ticks.append(s)
+		s += step
 
-	for index in step_count + 1:
-		ticks.append(segment * index)
+	#var segment := (dynamic_max_value - dynamic_min_value) / step_count
+
+	#for index in step_count + 1:
+		#ticks.append(segment * index)
 
 	return ticks
 
@@ -155,8 +162,8 @@ func create_cache() -> void:
 	var yscale_ticks_pos_cache := []
 	# This cannot be calculated at the same time as the yscale becuase it requires the view rect.
 	for value in get_yscale_ticks():
-		var percent := remap((value) / (dynamic_max_value - dynamic_min_value), 0, 1, 1, 0)
-		var pos := Vector2(view_rect.position.x, view_rect.size.y * percent + yscale_safe_margin)
+		var percent := remap((value - dynamic_min_value) / (dynamic_max_value - dynamic_min_value), 0, 1, 1, 0)
+		var pos := Vector2(view_rect.position.x, (view_rect.size.y * percent) + yscale_safe_margin)
 		yscale_ticks_pos_cache.append(pos)
 
 	cache["yscale_ticks_pos_cache"] = yscale_ticks_pos_cache

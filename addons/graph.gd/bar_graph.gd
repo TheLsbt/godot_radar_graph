@@ -9,7 +9,6 @@ extends "./2axis_graph.gd"
 @export var bar_seperation: float = 5.0
 @export var bar_thickness: float = 30
 
-
 var groups: Dictionary[int, PackedInt32Array] = {}
 var datasets: Array[Dictionary] = []
 
@@ -117,6 +116,9 @@ func get_dynamic_min_max_value() -> PackedFloat32Array:
 	_dynamic_min_value = min_value
 	_dynamic_max_value = max_value
 
+	if not allow_dynamic_range:
+		return [min_value, max_value]
+
 	var groups_keys_sorted := groups.keys()
 	groups_keys_sorted.sort()
 
@@ -180,7 +182,7 @@ func get_dynamic_min_max_value() -> PackedFloat32Array:
 			_dynamic_min_value = minf(_dynamic_min_value, acc_range[0])
 			_dynamic_max_value = maxf(_dynamic_max_value, acc_range[1])
 
-	return [_dynamic_min_value, _dynamic_max_value]
+	return [snappedf(_dynamic_min_value, -dynamic_range_steps), snappedf(_dynamic_max_value, dynamic_range_steps)]
 
 
 func create_cache() -> void:
