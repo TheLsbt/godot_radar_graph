@@ -28,6 +28,7 @@ extends Control
 @export var y_scale_tick_length := 8.0
 @export var y_scale_tick_width := 2.0
 @export var y_scale_tick_color := Color.WHITE
+@export var y_scale_value_title_snap := 0.0
 
 @export_group("Graph")
 @export var graph_boarder := Color.WHITE
@@ -75,16 +76,11 @@ func get_yscale_ticks() -> PackedFloat32Array:
 		ticks.append(s)
 		s += step
 
-	#var segment := (dynamic_max_value - dynamic_min_value) / step_count
-
-	#for index in step_count + 1:
-		#ticks.append(segment * index)
-
 	return ticks
 
 
 func yscale_tick_to_title(value: float) -> String:
-	return str(snappedf(value, 0.01))
+	return str(snappedf(value, y_scale_value_title_snap))
 
 
 ## Allowed to override, remember to use super() if you want to use higher level cache's.

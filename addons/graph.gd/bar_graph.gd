@@ -111,6 +111,28 @@ func get_value_single(dataset_ref: int, value_index: int) -> float:
 	return (min_value + max_value) / 2
 
 
+## See [method get_value]. This method returns a range even if the value is a single float / int.
+func get_value_range(dataset_ref: int, value_index: int) -> Array:
+	var value = get_value(dataset_ref, value_index)
+
+	var median := (min_value + max_value) / 2
+
+	match typeof(value):
+		TYPE_ARRAY:
+			# FIXME: Should prob. print a err
+			if value.size() == 0:
+				return [median, median]
+			elif value.size() == 1:
+				return [median, value]
+			else:
+				return value
+		TYPE_FLOAT or TYPE_INT:
+			return [median, value]
+
+	# FIXME: An error should prob go here too.
+	return [median, median]
+
+
 
 func get_dynamic_min_max_value() -> PackedFloat32Array:
 	_dynamic_min_value = min_value

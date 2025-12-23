@@ -18,9 +18,9 @@ func _on_randomize_pressed() -> void:
 	var tween := create_tween().set_parallel().set_trans(Tween.TRANS_EXPO)
 	for dataset_ref in bar_graph.datasets.size():
 		for c in bar_graph.index_count:
-			var prev_value := bar_graph.get_value_single(dataset_ref, c)
-			var next_value := randf_range(bar_graph.min_value, bar_graph.max_value)
+			var prev_value := bar_graph.get_value_range(dataset_ref, c)
+			var next_value := [randf_range(bar_graph.min_value, bar_graph.max_value), randf_range(bar_graph.min_value, bar_graph.max_value)]
 			tween.tween_method(
-				func(value: float):
-					bar_graph.set_value(dataset_ref, c, value),
+				func(value: Array):
+					bar_graph.set_value(dataset_ref, c, value[0]),
 				prev_value, next_value, 0.5)

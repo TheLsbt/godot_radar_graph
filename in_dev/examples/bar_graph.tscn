@@ -7,8 +7,6 @@
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 164.0
-offset_bottom = 367.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_rxhcv")
@@ -20,9 +18,11 @@ size_flags_vertical = 3
 script = ExtResource("2_rt7ka")
 bar_thickness = 80.0
 index_count = 3
-min_value = -40.0
-max_value = 0.0
+min_value = -50.0
+max_value = 50.0
+step = 20.0
 x_scale_titles = PackedStringArray("a", "b")
+y_scale_value_title_snap = 1.0
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
