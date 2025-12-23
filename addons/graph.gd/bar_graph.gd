@@ -117,14 +117,13 @@ func get_dynamic_min_max_value() -> PackedFloat32Array:
 	_dynamic_min_value = min_value
 	_dynamic_max_value = max_value
 
-	return [min_value, max_value]
-
 	var groups_keys_sorted := groups.keys()
 	groups_keys_sorted.sort()
 
+	var median := (min_value + max_value) / 2
+
 	for index in index_count:
 		for group_index in groups_keys_sorted:
-
 			var acc_range: PackedFloat32Array = [0, 0]
 			for dataset_ref: int in groups[group_index]:
 				var dataset: Dictionary = datasets[dataset_ref]
@@ -133,11 +132,10 @@ func get_dynamic_min_max_value() -> PackedFloat32Array:
 
 				var value = dataset["values"][index]
 
-				# FIXME: Note, low and high should prob. be the average of min_value and max_value.
 				# The begining value, this would be closest to 0
-				var low := (min_value + max_value) / 2
+				var low := 0.0
 				# The ending value, this would be furthest from 0
-				var high := low
+				var high := 0.0
 				# The next value to be added to accumulated
 				var next := 0.0
 				var next_hi := false
@@ -147,7 +145,7 @@ func get_dynamic_min_max_value() -> PackedFloat32Array:
 
 				match typeof(value):
 					TYPE_FLOAT, TYPE_INT:
-						if value >= 0:
+						if value > median:
 							low = acc_range[1]
 							next_hi = true
 						else:
@@ -161,7 +159,9 @@ func get_dynamic_min_max_value() -> PackedFloat32Array:
 						if value.size() == 0:
 							continue
 						else:
-							if value[0] >= 0:
+							# We can safely assume the array range has more than one element becuase
+							# we flatten the array if there is only one element.
+							if value[1] > median:
 								low = acc_range[1] + value[0]
 								high = acc_range[1] + value[1]
 								next_hi = true
@@ -170,17 +170,15 @@ func get_dynamic_min_max_value() -> PackedFloat32Array:
 								high = acc_range[0] + value[1]
 							next = value[1]
 					_:
-						printerr("Error calculating dynamic min max, invalid type for the value.")
+						printerr("Invalid type for the value")
 
 				if next_hi:
 					acc_range[1] += next
 				else:
 					acc_range[0] += next
 
-			print(acc_range)
-
-			_dynamic_min_value = min(_dynamic_min_value, acc_range[0])
-			_dynamic_max_value = max(_dynamic_max_value, acc_range[1])
+			_dynamic_min_value = minf(_dynamic_min_value, acc_range[0])
+			_dynamic_max_value = maxf(_dynamic_max_value, acc_range[1])
 
 	return [_dynamic_min_value, _dynamic_max_value]
 
@@ -246,7 +244,7 @@ func create_cache() -> void:
 
 				match typeof(value):
 					TYPE_FLOAT, TYPE_INT:
-						if value >= 0:
+						if value > median:
 							low = acc_range[1]
 							next_hi = true
 						else:
@@ -260,7 +258,9 @@ func create_cache() -> void:
 						if value.size() == 0:
 							continue
 						else:
-							if value[1] >= median:
+							# We can safely assume the array range has more than one element becuase
+							# we flatten the array if there is only one elemtn.2
+							if value[1] > median:
 								low = acc_range[1] + value[0]
 								high = acc_range[1] + value[1]
 								next_hi = true
@@ -291,10 +291,6 @@ func create_cache() -> void:
 					acc_range[0] += next
 
 	cache["bars"] = bars
-
-
-	cache_dirty = false
-
 
 
 func _get_minimum_size() -> Vector2:

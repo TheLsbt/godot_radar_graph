@@ -70,8 +70,6 @@ func get_yscale_ticks() -> PackedFloat32Array:
 
 	var segment := (dynamic_max_value - dynamic_min_value) / step_count
 
-	print(dynamic_min_max)
-
 	for index in step_count + 1:
 		ticks.append(segment * index)
 
