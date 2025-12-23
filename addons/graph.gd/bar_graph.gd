@@ -370,8 +370,8 @@ func scales_drawer() -> void:
 	var yscale_ticks := get_yscale_ticks()
 
 	for i in yscale_ticks.size():
-		var value := yscale_ticks[i] + _dynamic_min_value
-		var percent := remap((value) / (_dynamic_max_value - _dynamic_min_value), 0, 1, 1, 0)
+		var value := yscale_ticks[i]
+		var percent := remap((value - _dynamic_min_value) / (_dynamic_max_value - _dynamic_min_value), 0, 1, 1, 0)
 		var pos: Vector2 = yscale_ticks_pos_cache[i]
 
 		font.draw_multiline_string(
