@@ -4,6 +4,7 @@ extends Control
 enum ScalePrimaryType { NONE, PRIMARY_X, PRIMARY_Y }
 
 const Scale = preload('uid://bbggwqqw868h0')
+const Util = preload('uid://cwb6uwluafyoh')
 
 @export var index_count := 5
 @export var min_value := 0.0
@@ -14,6 +15,7 @@ const Scale = preload('uid://bbggwqqw868h0')
 @export var scale_seperation := 5.0
 
 @export var allow_dynamic_min_max := false
+@export var dynamic_min_max_snap := 0.0
 
 var dataset_groups := {
 	0: [
@@ -140,7 +142,11 @@ func get_dynamic_min_max() -> PackedFloat32Array:
 				drange[0] = minf(accumulated[1], drange[0])
 				drange[1] = maxf(accumulated[0], drange[1])
 
-	return drange
+	var snap := [
+		Util.snap_floorf(drange[0], dynamic_min_max_snap),
+		Util.snap_ceilf(drange[1], dynamic_min_max_snap)]
+
+	return snap
 
 
 func _process(delta: float) -> void:
@@ -148,7 +154,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	scales_drawer()
+	#scales_drawer()
 	var dynamic_min_max := get_dynamic_min_max()
 
 	# Calculate the primary x scale, required to be in a range of  0 - 1
