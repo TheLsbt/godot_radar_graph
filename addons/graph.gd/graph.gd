@@ -45,7 +45,7 @@ func _init() -> void:
 	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {}, ScalePrimaryType.PRIMARY_Y)
 
 	# Testing
-	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {"count": index_count})
+	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {"min": min_value, "max": max_value, "step": 50.0})
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT)
@@ -63,6 +63,7 @@ func add_scale(mode: Scale.ScaleMode, pos: Scale.ScalePosition, info := {}, prim
 	_scale.mode = mode
 	_scale.position = pos
 	_scale.info = info
+	_scale.graph = self
 	scales.append(_scale)
 	return _scale
 
@@ -154,7 +155,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	#scales_drawer()
+	scales_drawer()
 	var dynamic_min_max := get_dynamic_min_max()
 
 	# Calculate the primary x scale, required to be in a range of  0 - 1
@@ -249,6 +250,9 @@ func _draw() -> void:
 
 
 func scales_drawer() -> void:
+	var min_max := get_dynamic_min_max()
+	primary_y_scale.info = {"min": min_max[0], "max": min_max[1], "step": 10.0}
+
 	var left: PackedInt32Array = []
 	var top: PackedInt32Array = []
 	var right: PackedInt32Array = []
@@ -349,17 +353,17 @@ func scales_drawer() -> void:
 		rect.size.x -= total_left_width + total_right_width
 		bottom_rects[i] = rect
 
-
-	for i in left_rects:
-		draw_rect(i, Color(Color.LIGHT_GREEN, 0.5))
-
 	for i in top_rects:
 		draw_rect(i, Color(Color.DARK_RED, 0.5))
 
 	for i in right_rects:
 		draw_rect(i, Color(Color.DARK_GREEN, 0.5))
 
-	#print(bottom)
+	for i in left.size():
+		var rect := left_rects[i]
+		var _scale := scales[left[i]]
+		draw_rect(rect, Color.LIGHT_GREEN.darkened(i / float(left.size())))
+		_scale.draw(rect, self)
 
 	for i in bottom.size():
 		var rect := bottom_rects[i]
