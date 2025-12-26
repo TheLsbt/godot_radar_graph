@@ -1,6 +1,8 @@
 @tool
 extends Control
 
+enum ScalePrimaryType { NONE, PRIMARY_X, PRIMARY_Y }
+
 const Scale = preload('uid://bbggwqqw868h0')
 
 @export var index_count := 5
@@ -9,14 +11,15 @@ const Scale = preload('uid://bbggwqqw868h0')
 
 @export var bar_width := 16.0
 @export var bar_seperation := 5.0
+@export var scale_seperation := 5.0
 
 @export var allow_dynamic_min_max := false
 
 var dataset_groups := {
 	0: [
-		{"color": Color.PINK, "values": [10, 20, 30, 40, 50]},
+		{"color": Color.PINK, "values": [-20, 20, 30, 40, 50]},
 		{"color": Color.BLUE, "values": [10, 20, 30, 40, [10, 30]]},
-		{"color": Color.CORAL, "values": [[0, 40], 20, 30, 40, 30]},
+		{"color": Color.CORAL, "values": [[10, 40], 20, 30, 40, 30]},
 		],
 	1: [
 		{"color": Color.YELLOW, "values": [10, 20, 30, 40, 50]}
@@ -27,13 +30,39 @@ var dataset_groups := {
 }
 
 
+var scales: Array[Scale] = []
 var primary_x_scale: Scale = null
+var primary_y_scale: Scale = null
 
 
 func _init() -> void:
-	primary_x_scale = Scale.new()
-	primary_x_scale.mode = Scale.ScaleMode.LABEL
-	primary_x_scale.info = {"count": index_count, "labels": ["a", "b"]}
+	add_scale(
+		Scale.ScaleMode.LABEL, Scale.ScalePosition.BOTTOM, {"count": index_count},
+		ScalePrimaryType.PRIMARY_X
+	)
+	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {}, ScalePrimaryType.PRIMARY_Y)
+
+	# Testing
+	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {"count": index_count})
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT)
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT)
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.BOTTOM, {"count": index_count})
+
+
+func add_scale(mode: Scale.ScaleMode, pos: Scale.ScalePosition, info := {}, primary_type := ScalePrimaryType.NONE) -> Scale:
+	var _scale := Scale.new()
+	match primary_type:
+		ScalePrimaryType.PRIMARY_X:
+			primary_x_scale = _scale
+		ScalePrimaryType.PRIMARY_Y:
+			primary_y_scale = _scale
+	_scale.mode = mode
+	_scale.position = pos
+	_scale.info = info
+	scales.append(_scale)
+	return _scale
 
 
 ## Returns an array with two elements, where index 0 is the `dynamic min value` and and
@@ -119,6 +148,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
+	scales_drawer()
 	var dynamic_min_max := get_dynamic_min_max()
 
 	# Calculate the primary x scale, required to be in a range of  0 - 1
@@ -210,3 +240,123 @@ func _draw() -> void:
 				)
 
 				draw_rect(rect, color, true)
+
+
+func scales_drawer() -> void:
+	var left: PackedInt32Array = []
+	var top: PackedInt32Array = []
+	var right: PackedInt32Array = []
+	var bottom: PackedInt32Array = []
+
+	var left_rects: Array[Rect2] = []
+	var top_rects: Array[Rect2] = []
+	var right_rects: Array[Rect2] = []
+	var bottom_rects: Array[Rect2] = []
+
+	for s in scales.size():
+		var _scale: Scale = scales[s]
+		match _scale.position:
+			Scale.ScalePosition.LEFT:
+				left.append(s)
+			Scale.ScalePosition.TOP:
+				top.append(s)
+			Scale.ScalePosition.RIGHT:
+				right.append(s)
+			Scale.ScalePosition.BOTTOM:
+				bottom.append(s)
+
+	# Calculate the sides (left & right). We will have to come back to adjust them after the x
+	# scales.
+	var total_left_width := 0.0
+	for i in left:
+		var _scale: Scale = scales[i]
+
+		# Calculate the width of the
+		var width := 20 # Make it constant for now.
+
+		left_rects.append(Rect2(total_left_width + scale_seperation, 0, width, size.y))
+
+		total_left_width += width + scale_seperation
+
+
+	var total_top_height := 0.0
+	for i in top:
+		var _scale: Scale = scales[i]
+
+		# Calculate the width of the
+		var height := 20 # Make it constant for now.
+
+		top_rects.append(Rect2(0, total_top_height + scale_seperation, size.x, height))
+
+		total_top_height += height + scale_seperation
+
+	var total_right_width := 0.0
+	for i in right:
+		var _scale: Scale = scales[i]
+
+		# Calculate the width of the
+		var width := 20 # Make it constant for now.
+
+		right_rects.append(Rect2(size.x + total_right_width + scale_seperation, 0, width, size.y))
+
+		total_right_width += width + scale_seperation
+
+
+	var total_bottom_height := 0.0
+	for i in bottom:
+		var _scale: Scale = scales[i]
+
+		# Calculate the width of the
+		var height := 20 # Make it constant for now.
+
+		bottom_rects.append(Rect2(0, size.y + total_bottom_height + scale_seperation, size.x, height))
+
+		total_bottom_height += height + scale_seperation
+
+	# Now offset the rects based on the total widths.
+
+	for i in left_rects.size():
+		var rect := left_rects[i]
+		rect.position.x -= scale_seperation
+		rect.position.y += total_top_height
+		rect.size.y -= total_top_height + total_bottom_height
+		left_rects[i] = rect
+
+	for i in top_rects.size():
+		var rect := top_rects[i]
+		rect.position.y -= scale_seperation
+		rect.position.x += total_left_width
+		rect.size.x -= total_left_width + total_right_width
+		top_rects[i] = rect
+
+	for i in right_rects.size():
+		var rect := right_rects[i]
+		rect.position.x -= total_right_width
+		rect.position.y += total_top_height
+		rect.size.y -= total_top_height + total_bottom_height
+		right_rects[i] = rect
+
+	for i in bottom_rects.size():
+		var rect := bottom_rects[i]
+		rect.position.x += total_left_width
+		rect.position.y -= total_bottom_height
+		rect.size.x -= total_left_width + total_right_width
+		bottom_rects[i] = rect
+
+
+	for i in left_rects:
+		draw_rect(i, Color(Color.LIGHT_GREEN, 0.5))
+
+	for i in top_rects:
+		draw_rect(i, Color(Color.DARK_RED, 0.5))
+
+	for i in right_rects:
+		draw_rect(i, Color(Color.DARK_GREEN, 0.5))
+
+	#print(bottom)
+
+	for i in bottom.size():
+		var rect := bottom_rects[i]
+		var _scale := scales[bottom[i]]
+		draw_rect(rect, Color.LIGHT_CORAL.darkened(i / float(bottom.size())))
+		_scale.draw(rect, self)
