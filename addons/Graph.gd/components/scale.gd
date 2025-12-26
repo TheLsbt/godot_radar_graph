@@ -2,6 +2,13 @@ extends RefCounted
 
 enum ScalePosition { LEFT, TOP, RIGHT, BOTTOM }
 enum ScaleMode { VALUE, LABEL }
+enum TitleMode {
+	## When the scale is set to default, the title's are drawn next to the ticks.
+	DEFAULT,
+	## When drawing is inline, the titles are drawn inline to maximize space. It keeps the integrity
+	## of the text by keeping it up right.
+	INLINE
+	 }
 
 var default_font := ThemeDB.fallback_font
 var default_font_size := ThemeDB.fallback_font_size
@@ -9,12 +16,43 @@ var default_font_size := ThemeDB.fallback_font_size
 var position: ScalePosition
 var mode: ScaleMode
 
+var tick_length := 8.0
+var title_mode := TitleMode.INLINE
+
 var info: Dictionary = {}
 var graph: Control = null
 
 
-func get_minimum_size(_available_space: Vector2) -> Vector2:
-	return Vector2.ZERO
+func get_minimum_size() -> Vector2:
+	var minimum_size := Vector2.ZERO
+	var ticks := get_ticks()
+	match position:
+		ScalePosition.LEFT:
+			for t in ticks:
+				var max_value: float = info.get("max", 100.0)
+				var value = t * max_value
+
+				var label := str(snappedf(value, 0.01))
+
+				var string_size := default_font.get_string_size(label)
+
+				minimum_size.x = maxf(minimum_size.x, string_size.x)
+				minimum_size.y += string_size.y
+
+			if title_mode == TitleMode.DEFAULT:
+				minimum_size.x += tick_length
+
+		ScalePosition.BOTTOM:
+			for t in ticks:
+				var string_size := default_font.get_multiline_string_size(
+					"abc", HORIZONTAL_ALIGNMENT_CENTER, -1, default_font_size)
+				minimum_size.y = string_size.y
+
+				if title_mode == TitleMode.DEFAULT:
+					minimum_size.y += tick_length
+
+
+	return minimum_size
 
 
 ## Returns the ticks based on a 0 - 1 scale based in [member info].
@@ -44,9 +82,7 @@ func get_ticks() -> PackedFloat32Array:
 
 
 func draw(rect: Rect2, graph: Control) -> void:
-	var tick_length := 8.0
 	var ticks := get_ticks()
-	var title_mode: String = info.get("title_draw_mode", "segment")
 	var visual_last_tick: bool = info.get("visual_last_tick", false)
 
 	var segment: float
@@ -72,7 +108,20 @@ func draw(rect: Rect2, graph: Control) -> void:
 				var percent := remap(
 					(value - min_value) / (max_value - min_value), 0, 1, 1, 0)
 				var pos := Vector2(rect.end.x, rect.size.y * percent + rect.position.y)
-				graph.draw_circle(pos, 4, Color.PINK)
+
+				var label := str(snappedf(value, 0.01))
+
+				var font_width := default_font.get_multiline_string_size(label).x
+				var label_offset := Vector2(-font_width, 0)
+				if title_mode == TitleMode.DEFAULT:
+					label_offset += Vector2(-tick_length, default_font.get_descent())
+
+				default_font.draw_multiline_string(
+					graph.get_canvas_item(), pos + label_offset, label, HORIZONTAL_ALIGNMENT_RIGHT
+				)
+
+				graph.draw_line(pos, pos + direction * tick_length, Color.LIGHT_CYAN, 2)
+
 
 		ScalePosition.BOTTOM:
 			for t in ticks:
@@ -81,7 +130,7 @@ func draw(rect: Rect2, graph: Control) -> void:
 
 				var label_offset := Vector2(0, font_ascent)
 
-				if title_mode == "tick":
+				if title_mode == TitleMode.DEFAULT:
 					label_offset = Vector2(-px_segment / 2.0, font_ascent) + direction * tick_length
 
 				default_font.draw_multiline_string(

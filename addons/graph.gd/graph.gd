@@ -45,7 +45,7 @@ func _init() -> void:
 	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {}, ScalePrimaryType.PRIMARY_Y)
 
 	# Testing
-	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {"min": min_value, "max": max_value, "step": 50.0})
+	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {"min": 20, "max": 40, "step": 3})
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT)
@@ -281,8 +281,11 @@ func scales_drawer() -> void:
 	for i in left:
 		var _scale: Scale = scales[i]
 
+		var min_size := _scale.get_minimum_size()
+
+
 		# Calculate the width of the
-		var width := 20 # Make it constant for now.
+		var width := min_size.x
 
 		left_rects.append(Rect2(total_left_width + scale_seperation, 0, width, size.y))
 
@@ -315,9 +318,10 @@ func scales_drawer() -> void:
 	var total_bottom_height := 0.0
 	for i in bottom:
 		var _scale: Scale = scales[i]
+		var minimum_size := _scale.get_minimum_size()
 
 		# Calculate the width of the
-		var height := 20 # Make it constant for now.
+		var height := minimum_size.y
 
 		bottom_rects.append(Rect2(0, size.y + total_bottom_height + scale_seperation, size.x, height))
 

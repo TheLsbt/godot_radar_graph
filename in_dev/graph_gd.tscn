@@ -10,6 +10,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_pwch8")
+min_value = -100.0
 bar_width = 40.0
 allow_dynamic_min_max = true
 dynamic_min_max_snap = 20.0
