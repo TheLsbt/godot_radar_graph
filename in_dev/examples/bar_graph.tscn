@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://cyfcgvh86k3k4"]
+[gd_scene load_steps=4 format=3 uid="uid://cyfcgvh86k3k4"]
 
 [ext_resource type="Script" uid="uid://2b2ft0xnp08p" path="res://in_dev/examples/bar_graph.gd" id="1_rxhcv"]
-[ext_resource type="Script" uid="uid://ybqd0uk8xfp4" path="res://addons/graph.gd/bar_graph.gd" id="2_rt7ka"]
+[ext_resource type="Script" uid="uid://ybqd0uk8xfp4" path="res://addons/graph.gd [old]/bar_graph.gd" id="2_rt7ka"]
+[ext_resource type="Script" uid="uid://bg4a56mduord1" path="res://addons/graph.gd [old]/line_graph.gd" id="3_4vogx"]
 
 [node name="BarGraph" type="VBoxContainer"]
 anchors_preset = 15
@@ -11,18 +12,31 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_rxhcv")
 
-[node name="BarGraph" type="Control" parent="."]
+[node name="Graphs" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BarGraph" type="Control" parent="Graphs"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("2_rt7ka")
 bar_thickness = 80.0
 index_count = 3
-min_value = -50.0
 max_value = 50.0
-step = 20.0
+step = 50.0
+dynamic_range_steps = 50.0
 x_scale_titles = PackedStringArray("a", "b")
 y_scale_value_title_snap = 1.0
+
+[node name="LineGraph" type="Control" parent="Graphs"]
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("3_4vogx")
+index_count = 3
+min_value = -35.0
+max_value = 0.0
+x_scale_titles = PackedStringArray("a", "b")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2

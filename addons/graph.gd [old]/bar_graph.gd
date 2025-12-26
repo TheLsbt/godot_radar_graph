@@ -1,5 +1,5 @@
 @tool
-extends "./2axis_graph.gd"
+extends "2axis_graph.gd"
 
 # TODO: Make styling default here and customizable in a dataset.
 # FIXME: Dynamic min_max is not using the accumulated value (I think, am too tired to debug)
@@ -35,22 +35,6 @@ func _get_tooltip(at_position: Vector2) -> String:
 			return str(dataset.label, ": ", value)
 
 	return ""
-
-
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_READY:
-		cache_dirty = true
-	elif what == NOTIFICATION_DRAW:
-		if not is_node_ready():
-			return
-
-		for layer in get_layers():
-			var method_name := layer + "_drawer"
-			if has_method(method_name):
-				call(method_name)
-	elif what == NOTIFICATION_RESIZED:
-		cache_dirty = true
-		queue_redraw()
 
 
 ## Add a dataset, [param values] can be an array of floats, ints or array (containing at least 2 floats or ints).
@@ -204,6 +188,8 @@ func get_dynamic_min_max_value() -> PackedFloat32Array:
 			_dynamic_min_value = minf(_dynamic_min_value, acc_range[0])
 			_dynamic_max_value = maxf(_dynamic_max_value, acc_range[1])
 
+	#return [_dynamic_min_value, _dynamic_max_value]
+	#print("> ", snappedf(_dynamic_min_value, -dynamic_range_steps), ", ", snappedf(_dynamic_max_value, dynamic_range_steps))
 	return [snappedf(_dynamic_min_value, -dynamic_range_steps), snappedf(_dynamic_max_value, dynamic_range_steps)]
 
 
@@ -295,8 +281,17 @@ func create_cache() -> void:
 					_:
 						printerr("Invalid type for the value")
 
+
 				var pxlow := remap((low - _dynamic_min_value) / (_dynamic_max_value - _dynamic_min_value), 0, 1, 1, 0) * view_rect.size.y
 				var pxhigh := remap((high - _dynamic_min_value) / (_dynamic_max_value - _dynamic_min_value), 0, 1, 1, 0) * view_rect.size.y
+				draw_string(
+					default_font,
+					Vector2(pos + (bar_seperation + bar_thickness) * group_index, pxlow + view_rect.position.y),
+					str(pxlow), 0, -1, 16, background_color)
+				draw_string_outline(
+					default_font,
+					Vector2(pos + (bar_seperation + bar_thickness) * group_index, pxlow + view_rect.position.y),
+					str(pxlow), 0, -1, 16, 1, Color.BLACK)
 
 				var bar_rect := Rect2(
 					Vector2(pos + (bar_seperation + bar_thickness) * group_index, pxhigh + view_rect.position.y),
@@ -325,89 +320,6 @@ func _get_minimum_size() -> Vector2:
 ## The order each layer is drawn. To override a specific layer create a function following [code]<layer_name>_drawer[/code]
 func get_layers() -> PackedStringArray:
 	return ["grid", "graph_boarder", "bars", "scales"]
-
-
-## Default drawer for the grid.
-func grid_drawer() -> void:
-	_check_cache()
-	var view_rect: Rect2 = cache["view_rect"]
-	var xscale_ticks := get_xscale_ticks()
-	var xscale_grid: PackedVector2Array = []
-	for i in xscale_ticks.size():
-		var x := xscale_ticks[i]
-		var pos := Vector2(x + view_rect.position.x, view_rect.end.y)
-
-		xscale_grid.append(pos)
-		xscale_grid.append(Vector2(pos.x, view_rect.position.y))
-
-	var yscale_grid: PackedVector2Array = []
-	var yscale_ticks_pos_cache: Array = cache["yscale_ticks_pos_cache"]
-	var yscale_ticks := get_yscale_ticks()
-	for i in yscale_ticks.size():
-		var pos: Vector2 = yscale_ticks_pos_cache[i]
-		yscale_grid.append(pos)
-		yscale_grid.append(Vector2(view_rect.end.x, pos.y))
-
-	draw_multiline(xscale_grid, x_scale_tick_color, x_scale_tick_width)
-	draw_multiline(yscale_grid, y_scale_tick_color, y_scale_tick_width)
-
-
-func graph_boarder_drawer() -> void:
-	_check_cache()
-	var view_rect: Rect2 = cache["view_rect"]
-	draw_rect(view_rect, graph_boarder, false, graph_boarder_width)
-
-
-## Default drawer for both scales.
-func scales_drawer() -> void:
-	_check_cache()
-	var view_rect: Rect2 = cache["view_rect"]
-	var xscale_ticks := get_xscale_ticks()
-
-	var segment := view_rect.size.x / index_count
-
-	var font: Font = get_or_default("x_scale_font", default_font)
-	var font_size: int = get_or_default("x_scale_font_size", default_font_size)
-
-	for i in xscale_ticks.size():
-		var x := xscale_ticks[i]
-		var pos := Vector2(x + view_rect.position.x, view_rect.end.y)
-
-		if i == xscale_ticks.size() - 1:
-			break
-
-		font.draw_multiline_string(
-			get_canvas_item(),
-			pos + Vector2(0, font.get_ascent(font_size)),
-			x_scale_titles[wrapi(i, 0, x_scale_titles.size())],
-			HORIZONTAL_ALIGNMENT_CENTER,
-			segment
-		)
-
-		draw_line(pos, pos + Vector2(0, x_scale_tick_length),x_scale_tick_color, x_scale_tick_width)
-
-	font = get_or_default("y_scale_font", default_font)
-	font_size = get_or_default("y_scale_font_size", default_font_size)
-
-	var yscale_minimum_width: float = cache.get("yscale.minimum_width", -1)
-	var yscale_ticks_pos_cache: Array = cache["yscale_ticks_pos_cache"]
-	var yscale_ticks := get_yscale_ticks()
-
-	for i in yscale_ticks.size():
-		var value := yscale_ticks[i]
-		var percent := remap((value - _dynamic_min_value) / (_dynamic_max_value - _dynamic_min_value), 0, 1, 1, 0)
-		var pos: Vector2 = yscale_ticks_pos_cache[i]
-
-		font.draw_multiline_string(
-			get_canvas_item(),
-			Vector2(0, pos.y + font.get_descent(font_size)),
-			yscale_tick_to_title(value),
-			HORIZONTAL_ALIGNMENT_RIGHT,
-			yscale_minimum_width,
-			font_size
-		)
-
-		draw_line(pos, pos - Vector2(y_scale_tick_length, 0), y_scale_tick_color, y_scale_tick_width)
 
 
 ## Default drawer for all the bars.

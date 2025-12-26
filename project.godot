@@ -14,6 +14,14 @@ config/name="Graph.gd"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://assets/full_icon.svg"
 
+[debug]
+
+gdscript/warnings/unsafe_property_access=1
+gdscript/warnings/unsafe_method_access=1
+gdscript/warnings/unsafe_cast=1
+gdscript/warnings/unsafe_call_argument=1
+gdscript/warnings/return_value_discarded=1
+
 [file_customization]
 
 folder_colors={
