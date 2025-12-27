@@ -45,7 +45,7 @@ func _init() -> void:
 	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {}, ScalePrimaryType.PRIMARY_Y)
 
 	# Testing
-	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {"min": 20, "max": 40, "step": 3})
+	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {"min_value": 20, "max_value": 40, "step": 3})
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT)

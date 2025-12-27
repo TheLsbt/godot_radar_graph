@@ -30,11 +30,12 @@ func get_minimum_size() -> Vector2:
 	var ticks := get_ticks()
 	match position:
 		ScalePosition.LEFT:
-			for t in ticks:
-				var max_value: float = info.get("max", 100.0)
-				var value = t * max_value
+			for i in ticks.size():
+				var t: float = ticks[i]
 
-				var label := str(snappedf(value, 0.01))
+				var label := Util.tick_to_value_label(i, ticks, info)
+				if mode == ScaleMode.LABEL:
+					label = Util.tick_to_title_label(i, ticks, info)
 
 				var string_size := default_font.get_string_size(label)
 
@@ -72,22 +73,15 @@ func get_ticks() -> PackedFloat32Array:
 
 		ScaleMode.VALUE:
 			var step: float = info.get("step", 0)
-			var min_value: float = info.get("min", 0)
-			var max_value: float = info.get("max", 100)
+			var min_value: float = info.get("min_value", 0)
+			var max_value: float = info.get("max_value", 100)
 			var v: float = min_value
 
 			while v <= float(max_value):
-				ticks.append(__normalize_value(v, min_value, max_value))
+				ticks.append(Util.normalize_value(v, min_value, max_value))
 				v += step
 
 	return ticks
-
-
-# to denormalize(v, vmin, vmax): return v * (vmax - vmin) + vmin
-func __normalize_value(v: float, vmin: float, vmax: float) -> float:
-	if vmax == vmin:
-		return 0.0
-	return (v - vmin) / (vmax - vmin)
 
 
 func draw(rect: Rect2, graph: Control) -> void:
@@ -114,17 +108,12 @@ func draw(rect: Rect2, graph: Control) -> void:
 			for i in ticks.size():
 				var t: float = ticks[i]
 
-				var min_value: float = info.get("min", 0.0)
-				var max_value: float = info.get("max", 100.0)
-				var value = t * max_value
-				#var percent := remap(
-					#(value - min_value) / (max_value - min_value), 0, 1, 1, 0)
 				var percent := remap(t, 0, 1, 1, 0)
 				var pos := Vector2(rect.end.x, rect.size.y * percent + rect.position.y)
 
-				var label := Util.tick_to_value_label(i, ticks, {"min_value": min_value, "max_value": max_value})
+				var label := Util.tick_to_value_label(i, ticks, info)
 				if mode == ScaleMode.LABEL:
-					label = Util.tick_to_title_label(i, ticks, {"labels": ["abc"]})
+					label = Util.tick_to_title_label(i, ticks, info)
 
 
 				var font_width := default_font.get_multiline_string_size(label).x
