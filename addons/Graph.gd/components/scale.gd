@@ -1,5 +1,7 @@
 extends RefCounted
 
+const Util = preload('uid://cwb6uwluafyoh')
+
 enum ScalePosition { LEFT, TOP, RIGHT, BOTTOM }
 enum ScaleMode { VALUE, LABEL }
 enum TitleMode {
@@ -75,10 +77,17 @@ func get_ticks() -> PackedFloat32Array:
 			var v: float = min_value
 
 			while v <= float(max_value):
-				ticks.append(v / max_value)
+				ticks.append(__normalize_value(v, min_value, max_value))
 				v += step
 
 	return ticks
+
+
+# to denormalize(v, vmin, vmax): return v * (vmax - vmin) + vmin
+func __normalize_value(v: float, vmin: float, vmax: float) -> float:
+	if vmax == vmin:
+		return 0.0
+	return (v - vmin) / (vmax - vmin)
 
 
 func draw(rect: Rect2, graph: Control) -> void:
@@ -101,15 +110,22 @@ func draw(rect: Rect2, graph: Control) -> void:
 
 	match position:
 		ScalePosition.LEFT:
-			for t in ticks:
+			#print(ticks)
+			for i in ticks.size():
+				var t: float = ticks[i]
+
 				var min_value: float = info.get("min", 0.0)
 				var max_value: float = info.get("max", 100.0)
 				var value = t * max_value
-				var percent := remap(
-					(value - min_value) / (max_value - min_value), 0, 1, 1, 0)
+				#var percent := remap(
+					#(value - min_value) / (max_value - min_value), 0, 1, 1, 0)
+				var percent := remap(t, 0, 1, 1, 0)
 				var pos := Vector2(rect.end.x, rect.size.y * percent + rect.position.y)
 
-				var label := str(snappedf(value, 0.01))
+				var label := Util.tick_to_value_label(i, ticks, {"min_value": min_value, "max_value": max_value})
+				if mode == ScaleMode.LABEL:
+					label = Util.tick_to_title_label(i, ticks, {"labels": ["abc"]})
+
 
 				var font_width := default_font.get_multiline_string_size(label).x
 				var label_offset := Vector2(-font_width, 0)
