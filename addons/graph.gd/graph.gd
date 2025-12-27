@@ -39,18 +39,18 @@ var primary_y_scale: Scale = null
 
 func _init() -> void:
 	add_scale(
-		Scale.ScaleMode.LABEL, Scale.ScalePosition.BOTTOM, {"count": index_count},
+		Scale.ScaleMode.LABEL, Scale.ScalePosition.BOTTOM, {"count": index_count, "to_label_callback": Util.tick_to_title_label},
 		ScalePrimaryType.PRIMARY_X
 	)
 	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {}, ScalePrimaryType.PRIMARY_Y)
 
 	# Testing
-	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {"min_value": 20, "max_value": 40, "step": 3})
+	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {"min_value": 20, "max_value": 40, "step": 3, "to_label_callback": Util.tick_to_value_label})
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT)
 	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT)
-	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.BOTTOM, {"count": index_count})
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.BOTTOM, {"count": index_count, "to_label_callback": Util.tick_to_title_label})
 
 
 func add_scale(mode: Scale.ScaleMode, pos: Scale.ScalePosition, info := {}, primary_type := ScalePrimaryType.NONE) -> Scale:
@@ -60,6 +60,14 @@ func add_scale(mode: Scale.ScaleMode, pos: Scale.ScalePosition, info := {}, prim
 			primary_x_scale = _scale
 		ScalePrimaryType.PRIMARY_Y:
 			primary_y_scale = _scale
+
+	if typeof(info.get("to_label_callback", null)) != TYPE_CALLABLE:
+		match mode:
+			Scale.ScaleMode.VALUE:
+				info["to_label_callback"] = Util.tick_to_value_label
+			Scale.ScaleMode.VALUE:
+				info["to_label_callback"] = Util.tick_to_title_label
+
 	_scale.mode = mode
 	_scale.position = pos
 	_scale.info = info
@@ -251,7 +259,7 @@ func _draw() -> void:
 
 func scales_drawer() -> void:
 	var min_max := get_dynamic_min_max()
-	primary_y_scale.info = {"min": min_max[0], "max": min_max[1], "step": 10.0}
+	primary_y_scale.info.merge({"min": min_max[0], "max": min_max[1], "step": 10.0}, true)
 
 	var left: PackedInt32Array = []
 	var top: PackedInt32Array = []

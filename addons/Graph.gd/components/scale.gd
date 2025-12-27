@@ -33,6 +33,8 @@ func get_minimum_size() -> Vector2:
 			for i in ticks.size():
 				var t: float = ticks[i]
 
+				var callback: Callable = info.get("to_label_callback", null)
+
 				var label := Util.tick_to_value_label(i, ticks, info)
 				if mode == ScaleMode.LABEL:
 					label = Util.tick_to_title_label(i, ticks, info)
