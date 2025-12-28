@@ -1,5 +1,7 @@
 extends RefCounted
 
+# TODO: Make ScaleMode.VALUE render labels ontop of the ticks and ScaleMode.LABEL render them in the segment.
+
 const Util = preload('uid://cwb6uwluafyoh')
 
 enum ScalePosition { LEFT, TOP, RIGHT, BOTTOM }
@@ -96,7 +98,6 @@ func draw(rect: Rect2, graph: Control) -> void:
 	elif ticks.size() == 1:
 		ticks[0]
 
-	var px_segment := segment * rect.size.x
 
 	var title := "abc"
 	var font_ascent := default_font.get_ascent(default_font_size)
@@ -106,7 +107,7 @@ func draw(rect: Rect2, graph: Control) -> void:
 
 	match position:
 		ScalePosition.LEFT:
-			#print(ticks)
+			var px_segment := segment * rect.size.y
 			for i in ticks.size():
 				var t: float = ticks[i]
 
@@ -117,11 +118,20 @@ func draw(rect: Rect2, graph: Control) -> void:
 				if mode == ScaleMode.LABEL:
 					label = Util.tick_to_title_label(i, ticks, info)
 
+				# The size of the label (in px) offset to begin at the topleft.
+				var string_size := default_font.get_multiline_string_size(
+					label, 0, -1, default_font_size) + Vector2(0, default_font.get_ascent(default_font_size))
+				# The first line also offset to begin at the topleft.
+				var fl_size := default_font.get_string_size(label.get_slice("\n", 0),
+					0, -1, default_font_size) + Vector2(0, default_font.get_ascent(default_font_size))
 
-				var font_width := default_font.get_multiline_string_size(label).x
-				var label_offset := Vector2(-font_width, 0)
-				if title_mode == TitleMode.DEFAULT:
-					label_offset += Vector2(-tick_length, default_font.get_descent())
+				var half_string_height := string_size.y / 2.0
+
+
+				var label_offset := Vector2(-string_size.x, default_font.get_ascent(default_font_size))
+				label_offset.y -= (half_string_height - px_segment) / 2 + px_segment
+				#if title_mode == TitleMode.DEFAULT:
+					#label_offset += Vector2(-tick_length, default_font.get_descent())
 
 				default_font.draw_multiline_string(
 					graph.get_canvas_item(), pos + label_offset, label, HORIZONTAL_ALIGNMENT_RIGHT
@@ -131,6 +141,7 @@ func draw(rect: Rect2, graph: Control) -> void:
 
 
 		ScalePosition.BOTTOM:
+			var px_segment := segment * rect.size.x
 			for t in ticks:
 				var pos := Vector2(rect.size.x * t + rect.position.x, rect.position.y)
 				graph.draw_line(pos, pos + direction * tick_length, Color.LIGHT_CYAN, 2)
