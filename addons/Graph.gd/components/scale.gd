@@ -31,49 +31,60 @@ func get_minimum_size() -> Vector2:
 	var minimum_size := Vector2.ZERO
 	var ticks := get_ticks()
 	match position:
-		ScalePosition.LEFT:
+		ScalePosition.LEFT, ScalePosition.RIGHT:
 			for i in ticks.size():
 				var t: float = ticks[i]
 
 				var callback: Callable = info.get("to_label_callback", null)
-
-				var label := Util.tick_to_value_label(i, ticks, info)
-				if mode == ScaleMode.LABEL:
-					label = Util.tick_to_title_label(i, ticks, info)
+				var label := callback.call(i, ticks, info)
 
 				var string_size := default_font.get_string_size(label)
 
 				minimum_size.x = maxf(minimum_size.x, string_size.x)
 				minimum_size.y += string_size.y
 
-			if title_mode == TitleMode.DEFAULT:
+			if _is_label_inline_with_ticks():
 				minimum_size.x += tick_length
 
-		ScalePosition.BOTTOM:
-			for t in ticks:
+		ScalePosition.TOP, ScalePosition.BOTTOM:
+			for i in ticks.size():
+				var t: float = ticks[i]
+
+				var callback: Callable = info.get("to_label_callback", null)
+				var label := callback.call(i, ticks, info)
+
 				var string_size := default_font.get_multiline_string_size(
-					"abc", HORIZONTAL_ALIGNMENT_CENTER, -1, default_font_size)
+					label, HORIZONTAL_ALIGNMENT_CENTER, -1, default_font_size)
 				minimum_size.y = string_size.y
 
-				if title_mode == TitleMode.DEFAULT:
+				if _is_label_inline_with_ticks():
 					minimum_size.y += tick_length
 
 
 	return minimum_size
 
 
+func _is_label_inline_with_ticks() -> bool:
+	return true if mode == ScaleMode.VALUE else false
+
+
 ## Returns the ticks based on a 0 - 1 scale based in [member info].
 func get_ticks() -> PackedFloat32Array:
 	var ticks: PackedFloat32Array = []
+	var label_inline_with_ticks := _is_label_inline_with_ticks()
 	match mode:
 		ScaleMode.LABEL:
 			var count: int = info.get("count", 0)
 
-			for i in range(count):
-				ticks.append(i / float(count))
+			if label_inline_with_ticks:
+				for i in range(count - 1):
+					ticks.append(i / float(count - 1))
+				ticks.append(1.0)
+			else:
+				for i in range(count):
+					ticks.append(i / float(count))
 
-			if info.get("include_end"):
-				ticks.append(1)
+
 
 		ScaleMode.VALUE:
 			var step: float = info.get("step", 0)
@@ -89,6 +100,9 @@ func get_ticks() -> PackedFloat32Array:
 
 
 func draw(rect: Rect2, graph: Control) -> void:
+	# Make this a option in info.
+	var label_inline_with_ticks := _is_label_inline_with_ticks()
+
 	var ticks := get_ticks()
 	var visual_last_tick: bool = info.get("visual_last_tick", false)
 
@@ -99,66 +113,98 @@ func draw(rect: Rect2, graph: Control) -> void:
 		ticks[0]
 
 
-	var title := "abc"
 	var font_ascent := default_font.get_ascent(default_font_size)
+	var font_descent := default_font.get_descent(default_font_size)
 
 	var direction := position_to_direction(position)
 
 
 	match position:
-		ScalePosition.LEFT:
+		ScalePosition.LEFT, ScalePosition.RIGHT:
 			var px_segment := segment * rect.size.y
 			for i in ticks.size():
-				var t: float = ticks[i]
+				var t: float = remap(ticks[i], 0, 1, 1, 0)
+				var pos: Vector2
 
-				var percent := remap(t, 0, 1, 1, 0)
-				var pos := Vector2(rect.end.x, rect.size.y * percent + rect.position.y)
+				if position == ScalePosition.LEFT:
+					pos = Vector2(rect.end.x, rect.size.y * t + rect.position.y)
+				elif position == ScalePosition.RIGHT:
+					pos = Vector2(rect.position.x, rect.size.y * t + rect.position.y)
 
-				var label := Util.tick_to_value_label(i, ticks, info)
-				if mode == ScaleMode.LABEL:
-					label = Util.tick_to_title_label(i, ticks, info)
+				var to_label_callback: Callable = info.get("to_label_callback", null)
+				var label := to_label_callback.call(i, ticks, info)
 
 				# The size of the label (in px) offset to begin at the topleft.
 				var string_size := default_font.get_multiline_string_size(
-					label, 0, -1, default_font_size) + Vector2(0, default_font.get_ascent(default_font_size))
-				# The first line also offset to begin at the topleft.
-				var fl_size := default_font.get_string_size(label.get_slice("\n", 0),
-					0, -1, default_font_size) + Vector2(0, default_font.get_ascent(default_font_size))
+					label, 0, -1, default_font_size) + Vector2(0, font_ascent)
 
 				var half_string_height := string_size.y / 2.0
 
+				var label_offset: Vector2
+				if position == ScalePosition.LEFT:
+					if label_inline_with_ticks:
+						label_offset.x = -(string_size.x + tick_length)
+						# This doesnt feel right, but when getting the strings size it it like 4x the
+						# size its supposed to be.
+						label_offset.y = font_ascent - half_string_height / 2
+					else:
+						label_offset.x = -string_size.x
+						label_offset.y =font_ascent - (half_string_height - px_segment) / 2 - px_segment
 
-				var label_offset := Vector2(-string_size.x, default_font.get_ascent(default_font_size))
-				label_offset.y -= (half_string_height - px_segment) / 2 + px_segment
-				#if title_mode == TitleMode.DEFAULT:
-					#label_offset += Vector2(-tick_length, default_font.get_descent())
+				elif position == ScalePosition.RIGHT:
+					if label_inline_with_ticks:
+						label_offset.x = tick_length
+						label_offset.y = font_ascent - half_string_height / 2
+					else:
+						label_offset.y =font_ascent - (half_string_height - px_segment) / 2 - px_segment
 
 				default_font.draw_multiline_string(
 					graph.get_canvas_item(), pos + label_offset, label, HORIZONTAL_ALIGNMENT_RIGHT
 				)
 
-				graph.draw_line(pos, pos + direction * tick_length, Color.LIGHT_CYAN, 2)
+				_draw_tick(pos, direction)
 
 
-		ScalePosition.BOTTOM:
+		ScalePosition.TOP, ScalePosition.BOTTOM:
 			var px_segment := segment * rect.size.x
-			for t in ticks:
-				var pos := Vector2(rect.size.x * t + rect.position.x, rect.position.y)
-				graph.draw_line(pos, pos + direction * tick_length, Color.LIGHT_CYAN, 2)
+			for i in ticks.size():
+				var t: float = ticks[i]
+				var pos: Vector2
 
-				var label_offset := Vector2(0, font_ascent)
+				if position == ScalePosition.TOP:
+					pos = Vector2(rect.size.x * t + rect.position.x, rect.end.y)
+				elif position == ScalePosition.BOTTOM:
+					pos = Vector2(rect.size.x * t + rect.position.x, rect.position.y)
 
-				if title_mode == TitleMode.DEFAULT:
-					label_offset = Vector2(-px_segment / 2.0, font_ascent) + direction * tick_length
+				var to_label_callback: Callable = info.get("to_label_callback", null)
+				var label := to_label_callback.call(i, ticks, info)
+
+				# The size of the label (in px) offset to begin at the topleft.
+				var string_size := default_font.get_multiline_string_size(
+					label, 0, -1, default_font_size) + Vector2(0, font_ascent)
+
+				var label_offset: Vector2
+				if position == ScalePosition.TOP:
+					if label_inline_with_ticks:
+						label_offset = Vector2(-px_segment / 2.0, (-string_size.y / 4.0 + font_descent) ) + direction * tick_length
+					else:
+						label_offset = Vector2(0, -default_font.get_descent(default_font_size))
+				elif position == ScalePosition.BOTTOM:
+					if label_inline_with_ticks:
+						label_offset = Vector2(-px_segment / 2.0, font_ascent) + direction * tick_length
+					else:
+						label_offset = Vector2(0, font_ascent)
 
 				default_font.draw_multiline_string(
-					graph.get_canvas_item(), pos + label_offset, title, HORIZONTAL_ALIGNMENT_CENTER, px_segment
+					graph.get_canvas_item(), pos + label_offset, label,
+					HORIZONTAL_ALIGNMENT_CENTER, px_segment, default_font_size
 				)
 
-			if visual_last_tick:
-				graph.draw_circle(
-					Vector2(rect.size.x + rect.position.x, rect.end.y),
-					4, Color(Color.AQUAMARINE, 0.5))
+				_draw_tick(pos, direction)
+
+
+func _draw_tick(at: Vector2, direction: Vector2) -> void:
+	graph.draw_line(at, at + direction * tick_length, Color.LIGHT_CYAN, 2)
 
 
 func position_to_direction(p: ScalePosition) -> Vector2:

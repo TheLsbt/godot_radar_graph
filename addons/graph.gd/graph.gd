@@ -39,18 +39,20 @@ var primary_y_scale: Scale = null
 
 func _init() -> void:
 	add_scale(
-		Scale.ScaleMode.LABEL, Scale.ScalePosition.BOTTOM, {"count": index_count, "to_label_callback": Util.tick_to_title_label},
+		Scale.ScaleMode.LABEL, Scale.ScalePosition.BOTTOM, {"count": index_count, "labels": Util.get_months_short(index_count)},
 		ScalePrimaryType.PRIMARY_X
 	)
 	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {}, ScalePrimaryType.PRIMARY_Y)
 
 	# Testing
-	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {"min_value": 20, "max_value": 40, "step": 3, "to_label_callback": Util.tick_to_value_label})
-	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
-	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP)
-	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT)
-	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT)
-	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.BOTTOM, {"count": index_count, "to_label_callback": Util.tick_to_title_label})
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.LEFT, {"count": 5,"labels": Util.get_months_short(5)})
+	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.BOTTOM, {"min_value": 0.0, "max_value": 100.0, "step": 10})
+
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP, {"count": 5,"labels": Util.get_months_short(5)})
+	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.TOP, {"min_value": 0.0, "max_value": 10.0, "step": 1.0})
+
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT, {"count": 5,"labels": Util.get_months_short(5)})
+	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.RIGHT, {"min_value": 0.0, "max_value": 10.0, "step": 1.0})
 
 
 func add_scale(mode: Scale.ScaleMode, pos: Scale.ScalePosition, info := {}, primary_type := ScalePrimaryType.NONE) -> Scale:
@@ -61,11 +63,11 @@ func add_scale(mode: Scale.ScaleMode, pos: Scale.ScalePosition, info := {}, prim
 		ScalePrimaryType.PRIMARY_Y:
 			primary_y_scale = _scale
 
-	if typeof(info.get("to_label_callback", null)) != TYPE_CALLABLE:
+	if not info.has("to_label_callback"):
 		match mode:
 			Scale.ScaleMode.VALUE:
 				info["to_label_callback"] = Util.tick_to_value_label
-			Scale.ScaleMode.VALUE:
+			Scale.ScaleMode.LABEL:
 				info["to_label_callback"] = Util.tick_to_title_label
 
 	_scale.mode = mode
@@ -305,7 +307,7 @@ func scales_drawer() -> void:
 		var _scale: Scale = scales[i]
 
 		# Calculate the width of the
-		var height := 20 # Make it constant for now.
+		var height := _scale.get_minimum_size().y
 
 		top_rects.append(Rect2(0, total_top_height + scale_seperation, size.x, height))
 
@@ -316,7 +318,7 @@ func scales_drawer() -> void:
 		var _scale: Scale = scales[i]
 
 		# Calculate the width of the
-		var width := 20 # Make it constant for now.
+		var width := _scale.get_minimum_size().x
 
 		right_rects.append(Rect2(size.x + total_right_width + scale_seperation, 0, width, size.y))
 
@@ -365,11 +367,17 @@ func scales_drawer() -> void:
 		rect.size.x -= total_left_width + total_right_width
 		bottom_rects[i] = rect
 
-	for i in top_rects:
-		draw_rect(i, Color(Color.DARK_RED, 0.5))
+	for i in top_rects.size():
+		var rect := top_rects[i]
+		var _scale := scales[top[i]]
+		draw_rect(rect, Color.DARK_RED.darkened(i / float(top.size())))
+		_scale.draw(rect, self)
 
-	for i in right_rects:
-		draw_rect(i, Color(Color.DARK_GREEN, 0.5))
+	for i in right_rects.size():
+		var rect := right_rects[i]
+		var _scale := scales[right[i]]
+		draw_rect(rect, Color.DARK_GREEN.darkened(i / float(right.size())))
+		_scale.draw(rect, self)
 
 	for i in left.size():
 		var rect := left_rects[i]
