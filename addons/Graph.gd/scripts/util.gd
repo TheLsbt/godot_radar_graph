@@ -40,9 +40,9 @@ static func denormalize_value(v: float, vmin: float, vmax: float) -> float:
 	return v * (vmax - vmin) + vmin
 
 
-const MONTHS_SHORT: PackedStringArray =\
-	["Jan", "Feb", "Mar", "Apr", "May", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
-
-
-static func get_months_short(count: int) -> PackedStringArray:
-	return MONTHS_SHORT.slice(0, count)
+## If [param value] is a callable and then the return from the call is returned, otherwise
+## [param value] is returned as normal.
+func variant_or_call(value) -> Variant:
+	if typeof(value) == TYPE_CALLABLE:
+		return value.call()
+	return value

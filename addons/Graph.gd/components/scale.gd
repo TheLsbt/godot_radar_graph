@@ -6,13 +6,6 @@ const Util = preload('uid://cwb6uwluafyoh')
 
 enum ScalePosition { LEFT, TOP, RIGHT, BOTTOM }
 enum ScaleMode { VALUE, LABEL }
-enum TitleMode {
-	## When the scale is set to default, the title's are drawn next to the ticks.
-	DEFAULT,
-	## When drawing is inline, the titles are drawn inline to maximize space. It keeps the integrity
-	## of the text by keeping it up right.
-	INLINE
-	 }
 
 var default_font := ThemeDB.fallback_font
 var default_font_size := ThemeDB.fallback_font_size
@@ -21,7 +14,6 @@ var position: ScalePosition
 var mode: ScaleMode
 
 var tick_length := 8.0
-var title_mode := TitleMode.INLINE
 
 var info: Dictionary = {}
 var graph: Control = null

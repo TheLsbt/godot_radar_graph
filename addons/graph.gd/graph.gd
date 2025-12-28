@@ -5,6 +5,7 @@ enum ScalePrimaryType { NONE, PRIMARY_X, PRIMARY_Y }
 
 const Scale = preload('uid://bbggwqqw868h0')
 const Util = preload('uid://cwb6uwluafyoh')
+const Data = preload('uid://culmu1s7oyvyh')
 
 @export var index_count := 5
 @export var min_value := 0.0
@@ -39,22 +40,24 @@ var primary_y_scale: Scale = null
 
 func _init() -> void:
 	add_scale(
-		Scale.ScaleMode.LABEL, Scale.ScalePosition.BOTTOM, {"count": index_count, "labels": Util.get_months_short(index_count)},
+		Scale.ScaleMode.LABEL, Scale.ScalePosition.BOTTOM, {"count": index_count, "labels": Data.get_months(index_count)},
 		ScalePrimaryType.PRIMARY_X
 	)
 	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.LEFT, {}, ScalePrimaryType.PRIMARY_Y)
 
 	# Testing
-	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.LEFT, {"count": 5,"labels": Util.get_months_short(5)})
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.LEFT, {"count": 5,"labels": Data.get_months(5)})
 	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.BOTTOM, {"min_value": 0.0, "max_value": 100.0, "step": 10})
 
-	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP, {"count": 5,"labels": Util.get_months_short(5)})
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.TOP, {"count": 5,"labels": Data.get_months(5)})
 	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.TOP, {"min_value": 0.0, "max_value": 10.0, "step": 1.0})
 
-	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT, {"count": 5,"labels": Util.get_months_short(5)})
+	add_scale(Scale.ScaleMode.LABEL, Scale.ScalePosition.RIGHT, {"count": 5,"labels": Data.get_months(5)})
 	add_scale(Scale.ScaleMode.VALUE, Scale.ScalePosition.RIGHT, {"min_value": 0.0, "max_value": 10.0, "step": 1.0})
 
 
+## Adds a scale to the graph. If [param primary_type] is set to something other than
+## [enum Scale.PrimaryType.None] it will override the primary scale for that axis.
 func add_scale(mode: Scale.ScaleMode, pos: Scale.ScalePosition, info := {}, primary_type := ScalePrimaryType.NONE) -> Scale:
 	var _scale := Scale.new()
 	match primary_type:
