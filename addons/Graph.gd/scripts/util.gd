@@ -13,7 +13,7 @@ static func snap_floorf(value: float, step: float) -> float:
 ## [param info] requires, "min_value" (float), "max_value" (float).
 static func tick_to_value_label(tick_index: int, ticks: PackedFloat32Array, info: Dictionary) -> String:
 	var min_value: float = info.get("min_value", 0.0)
-	var max_value: float = info.get("min_value", 100.0)
+	var max_value: float = info.get("max_value", 100.0)
 	var tick: float = ticks[tick_index]
 	var value: float = denormalize_value(tick, min_value, max_value)
 

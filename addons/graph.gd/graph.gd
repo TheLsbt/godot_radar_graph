@@ -259,7 +259,7 @@ func _draw() -> void:
 
 func scales_drawer() -> void:
 	var min_max := get_dynamic_min_max()
-	primary_y_scale.info.merge({"min": min_max[0], "max": min_max[1], "step": 10.0}, true)
+	primary_y_scale.info.merge({"min_value": min_max[0], "max_value": min_max[1], "step": 10.0}, true)
 
 	var left: PackedInt32Array = []
 	var top: PackedInt32Array = []
