@@ -1,5 +1,7 @@
 extends RefCounted
 
+# TODO (LSBT) use paths, eg. group/subgroup/property to store information, when making animation it will be helpful.
+
 ## A utility script that provides useful placeholders for commonly used data in graphs.
 
 const MONTHS: Array[String] = ["January", "February", "March", "April", "May", "June", "July", "August",\
