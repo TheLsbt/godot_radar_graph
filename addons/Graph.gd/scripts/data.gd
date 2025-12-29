@@ -13,5 +13,6 @@ static func get_months(count: int, short := false) -> Array[String]:
 	count = maxi(1, mini(count, MONTHS.size()))
 	var months: Array[String] = MONTHS.slice(0, count)
 	if not short:
-		return months
+		var a := months.map(func(e: String): return e + "\n(Month)")
+		return Array(a, TYPE_STRING, &"", null)
 	return  months.map(func(e: String): return e.substr(0, 3))

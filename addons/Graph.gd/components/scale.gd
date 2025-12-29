@@ -1,6 +1,7 @@
 extends RefCounted
 
 # TODO: Make ScaleMode.VALUE render labels ontop of the ticks and ScaleMode.LABEL render them in the segment.
+# TODO: Make a way for the labels on the sides to know where they are so their alignent is correct
 
 const Util = preload('uid://cwb6uwluafyoh')
 
@@ -22,6 +23,7 @@ var graph: Control = null
 func get_minimum_size() -> Vector2:
 	var minimum_size := Vector2.ZERO
 	var ticks := get_ticks()
+
 	match position:
 		ScalePosition.LEFT, ScalePosition.RIGHT:
 			for i in ticks.size():
@@ -30,7 +32,8 @@ func get_minimum_size() -> Vector2:
 				var callback: Callable = info.get("to_label_callback", null)
 				var label := callback.call(i, ticks, info)
 
-				var string_size := default_font.get_string_size(label)
+				var string_size := default_font.get_multiline_string_size(
+					label, HORIZONTAL_ALIGNMENT_CENTER, -1, default_font_size)
 
 				minimum_size.x = maxf(minimum_size.x, string_size.x)
 				minimum_size.y += string_size.y
@@ -39,6 +42,7 @@ func get_minimum_size() -> Vector2:
 				minimum_size.x += tick_length
 
 		ScalePosition.TOP, ScalePosition.BOTTOM:
+			var total_width := 0.0
 			for i in ticks.size():
 				var t: float = ticks[i]
 
@@ -47,6 +51,7 @@ func get_minimum_size() -> Vector2:
 
 				var string_size := default_font.get_multiline_string_size(
 					label, HORIZONTAL_ALIGNMENT_CENTER, -1, default_font_size)
+				minimum_size.x += string_size.x
 				minimum_size.y = string_size.y
 
 				if _is_label_inline_with_ticks():
@@ -180,7 +185,7 @@ func draw(rect: Rect2, graph: Control) -> void:
 					if label_inline_with_ticks:
 						label_offset = Vector2(-px_segment / 2.0, (-string_size.y / 4.0 + font_descent) ) + direction * tick_length
 					else:
-						label_offset = Vector2(0, -default_font.get_descent(default_font_size))
+						label_offset = Vector2(0,  -font_ascent + font_descent - (string_size.y * 0.25))
 				elif position == ScalePosition.BOTTOM:
 					if label_inline_with_ticks:
 						label_offset = Vector2(-px_segment / 2.0, font_ascent) + direction * tick_length

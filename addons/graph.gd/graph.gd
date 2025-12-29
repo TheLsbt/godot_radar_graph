@@ -169,6 +169,7 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	scales_drawer()
+	return
 	var dynamic_min_max := get_dynamic_min_max()
 
 	# Calculate the primary x scale, required to be in a range of  0 - 1
