@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://m0o8wad18lgf"]
+
+[ext_resource type="Script" uid="uid://bk84d5gja2vo4" path="res://in_dev/string_sizing.gd" id="1_t6ux3"]
+
+[node name="StringSizing" type="Node2D"]
+script = ExtResource("1_t6ux3")

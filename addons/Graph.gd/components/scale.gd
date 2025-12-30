@@ -24,38 +24,23 @@ func get_minimum_size() -> Vector2:
 	var minimum_size := Vector2.ZERO
 	var ticks := get_ticks()
 
-	match position:
-		ScalePosition.LEFT, ScalePosition.RIGHT:
-			for i in ticks.size():
-				var t: float = ticks[i]
+	var index := 0 if position in [ScalePosition.LEFT, ScalePosition.RIGHT] else 1
+	var inv_index := 1 - index
 
-				var callback: Callable = info.get("to_label_callback", null)
-				var label := callback.call(i, ticks, info)
+	for i in ticks.size():
+		var t: float = ticks[i]
 
-				var string_size := default_font.get_multiline_string_size(
-					label, HORIZONTAL_ALIGNMENT_CENTER, -1, default_font_size)
+		var callback: Callable = info.get("to_label_callback", null)
+		var label := callback.call(i, ticks, info)
 
-				minimum_size.x = maxf(minimum_size.x, string_size.x)
-				minimum_size.y += string_size.y
+		var string_size := default_font.get_multiline_string_size(
+			label, HORIZONTAL_ALIGNMENT_CENTER, -1, default_font_size)
 
-			if _is_label_inline_with_ticks():
-				minimum_size.x += tick_length
+		minimum_size[index] = maxf(minimum_size[index], string_size[index])
+		minimum_size[inv_index] += string_size[inv_index]
 
-		ScalePosition.TOP, ScalePosition.BOTTOM:
-			var total_width := 0.0
-			for i in ticks.size():
-				var t: float = ticks[i]
-
-				var callback: Callable = info.get("to_label_callback", null)
-				var label := callback.call(i, ticks, info)
-
-				var string_size := default_font.get_multiline_string_size(
-					label, HORIZONTAL_ALIGNMENT_CENTER, -1, default_font_size)
-				minimum_size.x += string_size.x
-				minimum_size.y = string_size.y
-
-				if _is_label_inline_with_ticks():
-					minimum_size.y += tick_length
+	if _is_label_inline_with_ticks():
+		minimum_size[index] += tick_length
 
 
 	return minimum_size
@@ -80,7 +65,6 @@ func get_ticks() -> PackedFloat32Array:
 			else:
 				for i in range(count):
 					ticks.append(i / float(count))
-
 
 
 		ScaleMode.VALUE:
@@ -133,7 +117,7 @@ func draw(rect: Rect2, graph: Control) -> void:
 
 				# The size of the label (in px) offset to begin at the topleft.
 				var string_size := default_font.get_multiline_string_size(
-					label, 0, -1, default_font_size) + Vector2(0, font_ascent)
+					label, HORIZONTAL_ALIGNMENT_CENTER, -1, default_font_size)
 
 				var half_string_height := string_size.y / 2.0
 
@@ -146,14 +130,15 @@ func draw(rect: Rect2, graph: Control) -> void:
 						label_offset.y = font_ascent - half_string_height / 2
 					else:
 						label_offset.x = -string_size.x
-						label_offset.y =font_ascent - (half_string_height - px_segment) / 2 - px_segment
+						#label_offset.y = font_ascent - (half_string_height - px_segment) / 2 - px_segment
+						label_offset.y = font_ascent
 
 				elif position == ScalePosition.RIGHT:
 					if label_inline_with_ticks:
 						label_offset.x = tick_length
 						label_offset.y = font_ascent - half_string_height / 2
 					else:
-						label_offset.y =font_ascent - (half_string_height - px_segment) / 2 - px_segment
+						label_offset.y = font_ascent - (half_string_height - px_segment) / 2 - px_segment
 
 				default_font.draw_multiline_string(
 					graph.get_canvas_item(), pos + label_offset, label, HORIZONTAL_ALIGNMENT_RIGHT
