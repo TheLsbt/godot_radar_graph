@@ -36,6 +36,8 @@ func get_minimum_size() -> Vector2:
 		var string_size := default_font.get_multiline_string_size(
 			label, HORIZONTAL_ALIGNMENT_CENTER, -1, default_font_size)
 
+		# Calculates the minimum size for the scale regardless of the position.
+
 		minimum_size[index] = maxf(minimum_size[index], string_size[index])
 		minimum_size[inv_index] += string_size[inv_index]
 
