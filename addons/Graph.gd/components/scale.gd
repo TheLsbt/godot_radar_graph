@@ -103,6 +103,13 @@ func draw(rect: Rect2, graph: Control) -> void:
 	match position:
 		ScalePosition.LEFT, ScalePosition.RIGHT:
 			var px_segment := segment * rect.size.y
+
+			# Draw the ticks on the end (visual only), ticks on the sides are inverted so we use
+			# position.y becuase end.y is technically 0.
+			if not is_equal_approx(ticks[-1], 1.0):
+				var x := rect.end.x if position == ScalePosition.LEFT else rect.position.x
+				_draw_tick(Vector2(x, rect.position.y), direction)
+
 			for i in ticks.size():
 				var t: float = remap(ticks[i], 0, 1, 1, 0)
 				var pos: Vector2
@@ -127,19 +134,17 @@ func draw(rect: Rect2, graph: Control) -> void:
 						label_offset.x = -(string_size.x + tick_length)
 						# This doesnt feel right, but when getting the strings size it it like 4x the
 						# size its supposed to be.
-						label_offset.y = font_ascent - half_string_height / 2
+						label_offset.y = font_ascent - string_size.y / 2
 					else:
 						label_offset.x = -string_size.x
-						#label_offset.y = font_ascent - (half_string_height - px_segment) / 2 - px_segment
-						label_offset.y = font_ascent - (string_size - px_segment) / 2
-						#TODO: Fixme
+						label_offset.y = font_ascent - (string_size.y - px_segment) / 2 - px_segment
 
 				elif position == ScalePosition.RIGHT:
 					if label_inline_with_ticks:
 						label_offset.x = tick_length
-						label_offset.y = font_ascent - half_string_height / 2
+						label_offset.y = font_ascent - string_size.y / 2
 					else:
-						label_offset.y = font_ascent - (half_string_height - px_segment) / 2 - px_segment
+						label_offset.y = font_ascent - (string_size.y - px_segment) / 2 - px_segment
 
 				default_font.draw_multiline_string(
 					graph.get_canvas_item(), pos + label_offset, label, HORIZONTAL_ALIGNMENT_RIGHT
@@ -150,6 +155,12 @@ func draw(rect: Rect2, graph: Control) -> void:
 
 		ScalePosition.TOP, ScalePosition.BOTTOM:
 			var px_segment := segment * rect.size.x
+
+			# Draw the ticks on the end (visual only).
+			if not is_equal_approx(ticks[-1], 1.0):
+				var y := rect.end.y if position == ScalePosition.TOP else rect.position.y
+				_draw_tick(Vector2(rect.end.x, y), direction)
+
 			for i in ticks.size():
 				var t: float = ticks[i]
 				var pos: Vector2
@@ -164,15 +175,15 @@ func draw(rect: Rect2, graph: Control) -> void:
 
 				# The size of the label (in px) offset to begin at the topleft.
 				var string_size := default_font.get_multiline_string_size(
-					label, 0, -1, default_font_size) + Vector2(0, font_ascent)
-					# TODO: FIXME
+					label, 0, -1, default_font_size)
 
 				var label_offset: Vector2
 				if position == ScalePosition.TOP:
 					if label_inline_with_ticks:
-						label_offset = Vector2(-px_segment / 2.0, (-string_size.y / 4.0 + font_descent) ) + direction * tick_length
+						label_offset.x = -px_segment / 2
+						label_offset.y = font_ascent - string_size.y - tick_length
 					else:
-						label_offset = Vector2(0,  -font_ascent + font_descent - (string_size.y * 0.25))
+						label_offset.y = font_ascent - string_size.y
 				elif position == ScalePosition.BOTTOM:
 					if label_inline_with_ticks:
 						label_offset = Vector2(-px_segment / 2.0, font_ascent) + direction * tick_length
