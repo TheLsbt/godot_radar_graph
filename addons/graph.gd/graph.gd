@@ -2,10 +2,13 @@
 extends Control
 
 enum ScalePrimaryType { NONE, PRIMARY_X, PRIMARY_Y }
+enum Direction { HORIZONTAL=0, VERTICAL=1 }
 
 const Scale = preload('uid://bbggwqqw868h0')
 const Util = preload('uid://cwb6uwluafyoh')
 const Data = preload('uid://culmu1s7oyvyh')
+
+@export var direction := Direction.HORIZONTAL
 
 @export var index_count := 5
 @export var min_value := 0.0
@@ -169,7 +172,10 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	scales_drawer()
-	return
+
+	var axis := int(direction)
+	var inv_axis := 1 - axis
+
 	var dynamic_min_max := get_dynamic_min_max()
 
 	# Calculate the primary x scale, required to be in a range of  0 - 1
