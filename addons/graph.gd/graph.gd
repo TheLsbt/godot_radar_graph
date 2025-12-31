@@ -1,6 +1,9 @@
 @tool
 extends Control
 
+# TODO: Throw a error when the primary x axis (label) is not a Label type of scale for the Bar Graph.
+# FIXME: Fix the display bug where the graph is offset by <bar_seperation> and not truly centered.
+
 enum ScalePrimaryType { NONE, PRIMARY_X, PRIMARY_Y }
 enum Direction { HORIZONTAL=0, VERTICAL=1 }
 
@@ -8,6 +11,7 @@ const Scale = preload('uid://bbggwqqw868h0')
 const Util = preload('uid://cwb6uwluafyoh')
 const Data = preload('uid://culmu1s7oyvyh')
 
+# When the graph is set to vertical the scales need to change accordingly, so the x scale would be "labels".
 @export var direction := Direction.HORIZONTAL
 
 @export var index_count := 5
@@ -178,8 +182,8 @@ func _draw() -> void:
 
 	var dynamic_min_max := get_dynamic_min_max()
 
-	# Calculate the primary x scale, required to be in a range of  0 - 1
-	var xscale_ticks := primary_x_scale.get_ticks()
+	# Calculate the primary scale (based on direction), required to be in a range of  0 - 1
+	var axis_scale_ticks := primary_x_scale.get_ticks() if direction == Direction.HORIZONTAL else primary_y_scale.get_ticks()
 
 
 	#var middle: float = (min_value + max_value) / 2
@@ -188,7 +192,7 @@ func _draw() -> void:
 	var sorted_dataset_groups := dataset_groups.keys()
 	sorted_dataset_groups.sort()
 
-	var segment := size.x / index_count
+	var segment := size[axis] / index_count
 	var half_segment := segment / 2
 
 	var group_bar_width := dataset_groups.keys().size() * bar_width + bar_seperation
@@ -255,17 +259,21 @@ func _draw() -> void:
 				var lo_percent := remap((lo - dynamic_min_max[0]) / (dynamic_min_max[1] - dynamic_min_max[0]), 0.0, 1.0, 1.0, 0.0)
 				var hi_percent := remap((hi - dynamic_min_max[0]) / (dynamic_min_max[1] - dynamic_min_max[0]), 0.0, 1.0, 1.0, 0.0)
 
-				var lo_px_offset := lo_percent * size.y
-				var hi_px_offset := hi_percent * size.y
+				var lo_px_offset := lo_percent * size[inv_axis]
+				var hi_px_offset := hi_percent * size[inv_axis]
 
-				var px_x_position: float =\
-					xscale_ticks[index] * size.x + half_segment - group_bar_width / 2.0 + (group * bar_width) + bar_seperation * group
+				# FIXME: group is a int but is the groups id not the index in which the group is "made".
+				var axis_px_offset: float =\
+					axis_scale_ticks[index] * size[axis] + half_segment - group_bar_width / 2.0 + (group * bar_width) + bar_seperation * group
 
-				var rect := Rect2(
-					Vector2(px_x_position, hi_px_offset),
-					Vector2(bar_width, lo_px_offset - hi_px_offset)
-				)
+				#var px_x_position: float =\
+					#xscale_ticks[index] * size.x + half_segment - group_bar_width / 2.0 + (group * bar_width) + bar_seperation * group
 
+				var rect: Rect2 = Rect2(0, 0, 0, 0)
+				rect.position[axis] = axis_px_offset
+				rect.position[inv_axis] = hi_px_offset
+				rect.size[axis] = bar_width
+				rect.size[inv_axis] = lo_px_offset - hi_px_offset
 				draw_rect(rect, color, true)
 
 
