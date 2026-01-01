@@ -2,15 +2,29 @@
 
 [ext_resource type="Script" uid="uid://o2v3falxs8f4" path="res://addons/Graph.gd/graph.gd" id="1_pwch8"]
 
-[node name="Graph_gd" type="Control"]
-layout_mode = 3
+[node name="HBoxContainer" type="HBoxContainer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_right = 1824.0
+offset_bottom = 208.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="Graph_gd" type="Control" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
 script = ExtResource("1_pwch8")
 min_value = -120.0
 bar_width = 24.865
+allow_dynamic_min_max = true
+dynamic_min_max_snap = 1.0
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("1_pwch8")
+direction = 1
+min_value = -120.0
 allow_dynamic_min_max = true
 dynamic_min_max_snap = 1.0

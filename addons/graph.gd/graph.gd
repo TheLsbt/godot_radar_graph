@@ -164,8 +164,8 @@ func get_dynamic_min_max() -> PackedFloat32Array:
 				drange[1] = maxf(accumulated[0], drange[1])
 
 	var snap := [
-		Util.snap_floorf(drange[0], dynamic_min_max_snap),
-		Util.snap_ceilf(drange[1], dynamic_min_max_snap)]
+		Util.snap_floorf(drange[0], maxf(1, dynamic_min_max_snap)),
+		Util.snap_ceilf(drange[1], maxf(1, dynamic_min_max_snap))]
 
 	return snap
 
