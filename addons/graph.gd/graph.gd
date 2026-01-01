@@ -2,7 +2,6 @@
 extends Control
 
 # TODO: Throw a error when the primary x axis (label) is not a Label type of scale for the Bar Graph.
-# FIXME: Fix the display bug where the graph is offset by <bar_seperation> and not truly centered.
 
 enum ScalePrimaryType { NONE, PRIMARY_X, PRIMARY_Y }
 enum Direction { HORIZONTAL=0, VERTICAL=1 }
