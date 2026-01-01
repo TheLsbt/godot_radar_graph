@@ -185,6 +185,11 @@ func _draw() -> void:
 	# Calculate the primary scale (based on direction), required to be in a range of  0 - 1
 	var axis_scale_ticks := primary_x_scale.get_ticks() if direction == Direction.HORIZONTAL else primary_y_scale.get_ticks()
 
+	var view_rect := Rect2(135, 83, 0, 0)
+	view_rect.end.x = 1372
+	view_rect.end.y = 776
+
+	draw_rect(view_rect, Color.CADET_BLUE, false, 2)
 
 	#var middle: float = (min_value + max_value) / 2
 	var middle: float = 0.0
@@ -192,7 +197,8 @@ func _draw() -> void:
 	var sorted_dataset_groups := dataset_groups.keys()
 	sorted_dataset_groups.sort()
 
-	var segment := size[axis] / index_count
+	# We subtract the bar seperation from this segment to counter the way each bars positions are calculated.
+	var segment := view_rect.size[axis] / index_count - bar_seperation
 	var half_segment := segment / 2
 
 	var group_bar_width := dataset_groups.keys().size() * bar_width + bar_seperation
@@ -259,19 +265,19 @@ func _draw() -> void:
 				var lo_percent := remap((lo - dynamic_min_max[0]) / (dynamic_min_max[1] - dynamic_min_max[0]), 0.0, 1.0, 1.0, 0.0)
 				var hi_percent := remap((hi - dynamic_min_max[0]) / (dynamic_min_max[1] - dynamic_min_max[0]), 0.0, 1.0, 1.0, 0.0)
 
-				var lo_px_offset := lo_percent * size[inv_axis]
-				var hi_px_offset := hi_percent * size[inv_axis]
+				var lo_px_offset := lo_percent * view_rect.size[inv_axis]
+				var hi_px_offset := hi_percent * view_rect.size[inv_axis]
 
 				# FIXME: group is a int but is the groups id not the index in which the group is "made".
 				var axis_px_offset: float =\
-					axis_scale_ticks[index] * size[axis] + half_segment - group_bar_width / 2.0 + (group * bar_width) + bar_seperation * group
+					axis_scale_ticks[index] * view_rect.size[axis] + half_segment - group_bar_width / 2.0 + (group * bar_width) + bar_seperation * group
 
 				#var px_x_position: float =\
 					#xscale_ticks[index] * size.x + half_segment - group_bar_width / 2.0 + (group * bar_width) + bar_seperation * group
 
 				var rect: Rect2 = Rect2(0, 0, 0, 0)
-				rect.position[axis] = axis_px_offset
-				rect.position[inv_axis] = hi_px_offset
+				rect.position[axis] = axis_px_offset + view_rect.position[axis]
+				rect.position[inv_axis] = hi_px_offset + view_rect.position[inv_axis]
 				rect.size[axis] = bar_width
 				rect.size[inv_axis] = lo_px_offset - hi_px_offset
 				draw_rect(rect, color, true)
