@@ -182,7 +182,11 @@ func _draw() -> void:
 	var dynamic_min_max := get_dynamic_min_max()
 
 	# Calculate the primary scale (based on direction), required to be in a range of  0 - 1
-	var axis_scale_ticks := primary_x_scale.get_ticks() if direction == Direction.HORIZONTAL else primary_y_scale.get_ticks()
+	var primary_label_scale := primary_x_scale if direction == Direction.HORIZONTAL else primary_y_scale
+	if primary_label_scale.mode != Scale.ScaleMode.LABEL:
+		printerr(" The primary scale for the selected [direction] is not of the correct type (ScaleMode.LABEL)")
+		return
+	var axis_scale_ticks := primary_label_scale.get_ticks()
 
 	var view_rect := Rect2(135, 83, 0, 0)
 	view_rect.end.x = 1372
