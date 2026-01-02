@@ -378,23 +378,23 @@ func scales_drawer() -> void:
 	for i in left.size():
 		var rect := left_rects[i]
 		var _scale := scales[left[i]]
-		draw_rect(rect, Color.LIGHT_GREEN.darkened(i / float(left.size())))
+		#draw_rect(rect, Color.LIGHT_GREEN.darkened(i / float(left.size())))
 		_scale.draw(rect, self)
 
 	for i in top_rects.size():
 		var rect := top_rects[i]
 		var _scale := scales[top[i]]
-		draw_rect(rect, Color.DARK_RED.darkened(i / float(top.size())))
+		#draw_rect(rect, Color.DARK_RED.darkened(i / float(top.size())))
 		_scale.draw(rect, self)
 
 	for i in right_rects.size():
 		var rect := right_rects[i]
 		var _scale := scales[right[i]]
-		draw_rect(rect, Color.DARK_GREEN.darkened(i / float(right.size())))
+		#draw_rect(rect, Color.DARK_GREEN.darkened(i / float(right.size())))
 		_scale.draw(rect, self)
 
 	for i in bottom.size():
 		var rect := bottom_rects[i]
 		var _scale := scales[bottom[i]]
-		draw_rect(rect, Color.LIGHT_CORAL.darkened(i / float(bottom.size())))
+		#draw_rect(rect, Color.LIGHT_CORAL.darkened(i / float(bottom.size())))
 		_scale.draw(rect, self)

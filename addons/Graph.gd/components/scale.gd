@@ -42,7 +42,7 @@ func get_minimum_size() -> Vector2:
 		minimum_size[index] = maxf(minimum_size[index], string_size[index])
 		minimum_size[inv_index] += string_size[inv_index]
 
-	if _is_label_inline_with_ticks():
+	if _is_label_inline_with_ticks() or not position in [ScalePosition.TOP, ScalePosition.BOTTOM]:
 		minimum_size[index] += tick_length
 
 
@@ -139,7 +139,7 @@ func draw(rect: Rect2, graph: Control) -> void:
 						# size its supposed to be.
 						label_offset.y = font_ascent - string_size.y / 2
 					else:
-						label_offset.x = -string_size.x
+						label_offset.x = -(string_size.x + tick_length)
 						label_offset.y = font_ascent - (string_size.y - px_segment) / 2 - px_segment
 
 				elif position == ScalePosition.RIGHT:
@@ -147,6 +147,7 @@ func draw(rect: Rect2, graph: Control) -> void:
 						label_offset.x = tick_length
 						label_offset.y = font_ascent - string_size.y / 2
 					else:
+						label_offset.x = tick_length
 						label_offset.y = font_ascent - (string_size.y - px_segment) / 2 - px_segment
 
 				default_font.draw_multiline_string(
