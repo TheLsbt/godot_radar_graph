@@ -183,14 +183,12 @@ func _draw() -> void:
 
 	# Calculate the primary scale (based on direction), required to be in a range of  0 - 1
 	var primary_label_scale := primary_x_scale if direction == Direction.HORIZONTAL else primary_y_scale
-	if primary_label_scale.mode != Scale.ScaleMode.LABEL:
+	if primary_label_scale.mode != Scale.ScaleMode.LABEL and false: # TODO: Remove false (only debug)
 		printerr(" The primary scale for the selected [direction] is not of the correct type (ScaleMode.LABEL)")
 		return
 	var axis_scale_ticks := primary_label_scale.get_ticks()
 
-	var view_rect := Rect2(135, 83, 0, 0)
-	view_rect.end.x = 1372
-	view_rect.end.y = 776
+	var view_rect := Rect2(134, 87, 1231, 683)
 
 	draw_rect(view_rect, Color.CADET_BLUE, false, 2)
 
@@ -286,6 +284,47 @@ func _draw() -> void:
 				draw_rect(rect, color, true)
 
 
+## Calculates the basic rect, this only takes account scales on the same size. Use [param far_end]
+## to tell the calculator to offset the rect to the far end of this [Control] node.[br][br]
+## Returns a [Dictionary] where the key [code]rects[/code] is an array of the calculated rects
+## and [code]total[/code] is the total width or height depending on [param axis].
+func _calculate_basic_rect(axis: Vector2.Axis, scales_ref: PackedInt32Array, far_end := false) -> Dictionary:
+	var inv_axis: int = 1 - axis
+	var offset: float = size[inv_axis] if far_end else 0.0
+
+	var rects: Array[Rect2] = []
+	# Could be the total width or height depending on the axis.
+	var total := 0.0
+
+	for i in scales_ref:
+		var _scale: Scale = scales[i]
+		var scale_min_size := _scale.get_minimum_size()
+
+		var rect: Rect2
+		rect.position[inv_axis] = offset + total + scale_seperation
+		rect.size[inv_axis] = scale_min_size[inv_axis]
+		rect.size[axis] = size[axis]
+		rects.append(rect)
+
+		total += scale_min_size[inv_axis] + scale_seperation
+
+	return {"rects": rects, "total": total}
+
+
+
+## Completes the rect transforms on [param rects] by taking into account the other scales.
+## Where [param offset_a] and [param offsetc] aligns with [param axis] and [param offset_b] aligns
+## with the opposite of [param axis].
+func _complete_rect_transforms(rects: Array[Rect2], axis: Vector2.Axis, offset_a: float, offset_b: float, offset_c: float) -> void:
+	var inv_axis: int = 1 - axis
+	for i in rects.size():
+		var rect := rects[i]
+		rect.position[axis] += offset_a
+		rect.position[inv_axis] -= offset_b
+		rect.size[axis] -= offset_a + offset_c
+		rects[i] = rect
+
+
 func scales_drawer() -> void:
 	var min_max := get_dynamic_min_max()
 	primary_y_scale.info.merge({"min_value": min_max[0], "max_value": min_max[1], "step": 20.0}, true)
@@ -294,11 +333,6 @@ func scales_drawer() -> void:
 	var top: PackedInt32Array = []
 	var right: PackedInt32Array = []
 	var bottom: PackedInt32Array = []
-
-	var left_rects: Array[Rect2] = []
-	var top_rects: Array[Rect2] = []
-	var right_rects: Array[Rect2] = []
-	var bottom_rects: Array[Rect2] = []
 
 	for s in scales.size():
 		var _scale: Scale = scales[s]
@@ -312,87 +346,35 @@ func scales_drawer() -> void:
 			Scale.ScalePosition.BOTTOM:
 				bottom.append(s)
 
-	# Calculate the sides (left & right). We will have to come back to adjust them after the x
-	# scales.
-	var total_left_width := 0.0
-	for i in left:
-		var _scale: Scale = scales[i]
 
-		var min_size := _scale.get_minimum_size()
+	var l := _calculate_basic_rect(Vector2.AXIS_Y, left)
+	var total_left_width: float = l.get("total", 0.0)
+	var left_rects: Array[Rect2] = l.get("rects", [])
 
+	var t := _calculate_basic_rect(Vector2.AXIS_X, top)
+	var total_top_height: float = t.get("total", 0.0)
+	var top_rects: Array[Rect2] = t.get("rects", [])
 
-		# Calculate the width of the
-		var width := min_size.x
+	var r := _calculate_basic_rect(Vector2.AXIS_Y, right, size.x)
+	var total_right_width: float = r.get("total", 0.0)
+	var right_rects: Array[Rect2] = r.get("rects", [])
 
-		left_rects.append(Rect2(total_left_width + scale_seperation, 0, width, size.y))
+	var b := _calculate_basic_rect(Vector2.AXIS_X, bottom, size.y)
+	var total_bottom_height: float = b.get("total", 0.0)
+	var bottom_rects: Array[Rect2] = b.get("rects", [])
 
-		total_left_width += width + scale_seperation
-
-
-	var total_top_height := 0.0
-	for i in top:
-		var _scale: Scale = scales[i]
-
-		# Calculate the width of the
-		var height := _scale.get_minimum_size().y
-
-		top_rects.append(Rect2(0, total_top_height + scale_seperation, size.x, height))
-
-		total_top_height += height + scale_seperation
-
-	var total_right_width := 0.0
-	for i in right:
-		var _scale: Scale = scales[i]
-
-		# Calculate the width of the
-		var width := _scale.get_minimum_size().x
-
-		right_rects.append(Rect2(size.x + total_right_width + scale_seperation, 0, width, size.y))
-
-		total_right_width += width + scale_seperation
+	_complete_rect_transforms(left_rects, Vector2.AXIS_Y, total_top_height, scale_seperation, total_bottom_height)
+	_complete_rect_transforms(top_rects, Vector2.AXIS_X, total_left_width, scale_seperation, total_right_width)
+	_complete_rect_transforms(right_rects, Vector2.AXIS_Y, total_top_height, total_right_width, total_bottom_height)
+	_complete_rect_transforms(bottom_rects, Vector2.AXIS_X, total_left_width, total_bottom_height, total_right_width)
 
 
-	var total_bottom_height := 0.0
-	for i in bottom:
-		var _scale: Scale = scales[i]
-		var minimum_size := _scale.get_minimum_size()
-
-		# Calculate the width of the
-		var height := minimum_size.y
-
-		bottom_rects.append(Rect2(0, size.y + total_bottom_height + scale_seperation, size.x, height))
-
-		total_bottom_height += height + scale_seperation
-
-	# Now offset the rects based on the total widths.
-
-	for i in left_rects.size():
+	# NOTE: Debug code to show the bounds of each scale.
+	for i in left.size():
 		var rect := left_rects[i]
-		rect.position.x -= scale_seperation
-		rect.position.y += total_top_height
-		rect.size.y -= total_top_height + total_bottom_height
-		left_rects[i] = rect
-
-	for i in top_rects.size():
-		var rect := top_rects[i]
-		rect.position.y -= scale_seperation
-		rect.position.x += total_left_width
-		rect.size.x -= total_left_width + total_right_width
-		top_rects[i] = rect
-
-	for i in right_rects.size():
-		var rect := right_rects[i]
-		rect.position.x -= total_right_width
-		rect.position.y += total_top_height
-		rect.size.y -= total_top_height + total_bottom_height
-		right_rects[i] = rect
-
-	for i in bottom_rects.size():
-		var rect := bottom_rects[i]
-		rect.position.x += total_left_width
-		rect.position.y -= total_bottom_height
-		rect.size.x -= total_left_width + total_right_width
-		bottom_rects[i] = rect
+		var _scale := scales[left[i]]
+		draw_rect(rect, Color.LIGHT_GREEN.darkened(i / float(left.size())))
+		_scale.draw(rect, self)
 
 	for i in top_rects.size():
 		var rect := top_rects[i]
@@ -404,12 +386,6 @@ func scales_drawer() -> void:
 		var rect := right_rects[i]
 		var _scale := scales[right[i]]
 		draw_rect(rect, Color.DARK_GREEN.darkened(i / float(right.size())))
-		_scale.draw(rect, self)
-
-	for i in left.size():
-		var rect := left_rects[i]
-		var _scale := scales[left[i]]
-		draw_rect(rect, Color.LIGHT_GREEN.darkened(i / float(left.size())))
 		_scale.draw(rect, self)
 
 	for i in bottom.size():
