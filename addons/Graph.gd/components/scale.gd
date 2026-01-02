@@ -15,6 +15,7 @@ var position: ScalePosition
 var mode: ScaleMode
 
 var tick_length := 8.0
+var tick_width := 2
 
 var info: Dictionary = {}
 var graph: Control = null
@@ -151,7 +152,10 @@ func draw(rect: Rect2, graph: Control) -> void:
 				default_font.draw_multiline_string(
 					graph.get_canvas_item(), pos + label_offset, label, HORIZONTAL_ALIGNMENT_RIGHT
 				)
-
+				# Draw the line that shows how tall the scale is.
+				graph.draw_line(
+					Vector2(pos.x, rect.position.y - tick_width / 2),
+					Vector2(pos.x, rect.end.y + tick_width / 2), Color.AQUAMARINE, tick_width)
 				_draw_tick(pos, direction)
 
 
@@ -197,11 +201,17 @@ func draw(rect: Rect2, graph: Control) -> void:
 					HORIZONTAL_ALIGNMENT_CENTER, px_segment, default_font_size
 				)
 
+				# Draw the line that shows how wide the scale is.
+				graph.draw_line(
+					Vector2(rect.position.x - tick_width / 2, pos.y),
+					Vector2(rect.end.x + tick_width / 2, pos.y), Color.AQUAMARINE, tick_width)
+				_draw_tick(pos, direction)
+
 				_draw_tick(pos, direction)
 
 
 func _draw_tick(at: Vector2, direction: Vector2) -> void:
-	graph.draw_line(at, at + direction * tick_length, Color.LIGHT_CYAN, 2)
+	graph.draw_line(at, at + direction * tick_length, Color.LIGHT_CYAN, tick_width)
 
 
 func position_to_direction(p: ScalePosition) -> Vector2:

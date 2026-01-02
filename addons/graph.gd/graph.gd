@@ -368,6 +368,11 @@ func scales_drawer() -> void:
 	_complete_rect_transforms(right_rects, Vector2.AXIS_Y, total_top_height, total_right_width, total_bottom_height)
 	_complete_rect_transforms(bottom_rects, Vector2.AXIS_X, total_left_width, total_bottom_height, total_right_width)
 
+	var view_rect := Rect2(
+		total_left_width, total_top_height,
+		size.x - (total_right_width + total_left_width), size.y - (total_bottom_height + total_top_height)
+	)
+	draw_rect(view_rect, Color.PINK, false, 2)
 
 	# NOTE: Debug code to show the bounds of each scale.
 	for i in left.size():
