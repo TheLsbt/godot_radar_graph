@@ -16,6 +16,7 @@ const Data = preload('uid://culmu1s7oyvyh')
 @export var index_count := 5
 @export var min_value := 0.0
 @export var max_value := 100.0
+@export var step := 20.0
 
 @export var bar_width := 16.0
 @export var bar_seperation := 5.0
@@ -321,7 +322,7 @@ func _complete_rect_transforms(rects: Array[Rect2], axis: Vector2.Axis, offset_a
 		var rect := rects[i]
 		rect.position[axis] += offset_a
 		rect.position[inv_axis] -= offset_b
-		rect.size[axis] -= offset_a + offset_c
+		rect.size[axis] -= (offset_a + offset_c) - scale_seperation
 		rects[i] = rect
 
 
@@ -349,11 +350,11 @@ func scales_drawer() -> Rect2:
 
 
 	var l := _calculate_basic_rect(Vector2.AXIS_Y, left)
-	var total_left_width: float = l.get("total", 0.0)
+	var total_left_width: float = l.get("total", 0.0) - scale_seperation
 	var left_rects: Array[Rect2] = l.get("rects", [])
 
 	var t := _calculate_basic_rect(Vector2.AXIS_X, top)
-	var total_top_height: float = t.get("total", 0.0)
+	var total_top_height: float = t.get("total", 0.0) - scale_seperation
 	var top_rects: Array[Rect2] = t.get("rects", [])
 
 	var r := _calculate_basic_rect(Vector2.AXIS_Y, right, size.x)
@@ -371,7 +372,8 @@ func scales_drawer() -> Rect2:
 
 	var view_rect := Rect2(
 		total_left_width, total_top_height,
-		size.x - (total_right_width + total_left_width), size.y - (total_bottom_height + total_top_height)
+		size.x - (total_right_width + total_left_width) + scale_seperation,
+		size.y - (total_bottom_height + total_top_height) + scale_seperation
 	)
 	draw_rect(view_rect, Color.PINK, false, 2)
 
@@ -379,25 +381,25 @@ func scales_drawer() -> Rect2:
 	for i in left.size():
 		var rect := left_rects[i]
 		var _scale := scales[left[i]]
-		#draw_rect(rect, Color.LIGHT_GREEN.darkened(i / float(left.size())))
+		draw_rect(rect, Color.LIGHT_GREEN.darkened(i / float(left.size())))
 		_scale.draw(rect, self)
 
 	for i in top_rects.size():
 		var rect := top_rects[i]
 		var _scale := scales[top[i]]
-		#draw_rect(rect, Color.DARK_RED.darkened(i / float(top.size())))
+		draw_rect(rect, Color.DARK_RED.darkened(i / float(top.size())))
 		_scale.draw(rect, self)
 
 	for i in right_rects.size():
 		var rect := right_rects[i]
 		var _scale := scales[right[i]]
-		#draw_rect(rect, Color.DARK_GREEN.darkened(i / float(right.size())))
+		draw_rect(rect, Color.DARK_GREEN.darkened(i / float(right.size())))
 		_scale.draw(rect, self)
 
 	for i in bottom.size():
 		var rect := bottom_rects[i]
 		var _scale := scales[bottom[i]]
-		#draw_rect(rect, Color.LIGHT_CORAL.darkened(i / float(bottom.size())))
+		draw_rect(rect, Color.LIGHT_CORAL.darkened(i / float(bottom.size())))
 		_scale.draw(rect, self)
 
 	return view_rect
@@ -411,3 +413,4 @@ func check_cache() -> void:
 func cache() -> void:
 	# Notify the primary "value" scale of any changes to min_value, max_value and step
 	var p_value_scale: Scale = primary_y_scale if direction == Direction.HORIZONTAL else primary_x_scale
+	p_value_scale.update({"min_value": min_value, "max_value": max_value, "step": step})

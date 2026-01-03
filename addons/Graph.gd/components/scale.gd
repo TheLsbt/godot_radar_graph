@@ -21,6 +21,10 @@ var info: Dictionary = {}
 var graph: Control = null
 
 
+func update(with: Dictionary) -> void:
+	info = info.merged(with, true)
+
+
 func get_minimum_size() -> Vector2:
 	var minimum_size := Vector2.ZERO
 	var ticks := get_ticks()

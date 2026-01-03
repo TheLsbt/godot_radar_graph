@@ -6,7 +6,7 @@
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = 1144.0
+offset_right = 1152.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -15,6 +15,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("1_pwch8")
 min_value = -120.0
+step = null
 bar_width = 24.865
 allow_dynamic_min_max = true
 dynamic_min_max_snap = 20.0
@@ -25,5 +26,6 @@ size_flags_horizontal = 3
 script = ExtResource("1_pwch8")
 direction = 1
 min_value = -120.0
+step = null
 allow_dynamic_min_max = true
 dynamic_min_max_snap = 1.0
