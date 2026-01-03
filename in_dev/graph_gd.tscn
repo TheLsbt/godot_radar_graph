@@ -6,8 +6,7 @@
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = 2242.0
-offset_bottom = 318.0
+offset_right = 1144.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -18,7 +17,7 @@ script = ExtResource("1_pwch8")
 min_value = -120.0
 bar_width = 24.865
 allow_dynamic_min_max = true
-dynamic_min_max_snap = 1.0
+dynamic_min_max_snap = 20.0
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 2

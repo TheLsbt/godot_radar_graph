@@ -1,7 +1,7 @@
 @tool
 extends Control
 
-# TODO: Throw a error when the primary x axis (label) is not a Label type of scale for the Bar Graph.
+# FIXME: When updating the primary "value" scale we need to first check if it is valid and not a label scale.
 
 enum ScalePrimaryType { NONE, PRIMARY_X, PRIMARY_Y }
 enum Direction { HORIZONTAL=0, VERTICAL=1 }
@@ -37,6 +37,8 @@ var dataset_groups := {
 		{"color": Color.AQUAMARINE, "values": [10, 20, 30, 40, 50]}
 		]
 }
+
+var cache_dirty := true
 
 
 var scales: Array[Scale] = []
@@ -174,7 +176,8 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	scales_drawer()
+	var view_rect := scales_drawer()
+	draw_rect(view_rect, Color.CADET_BLUE, false, 2)
 
 	var axis := int(direction)
 	var inv_axis := 1 - axis
@@ -188,9 +191,6 @@ func _draw() -> void:
 		return
 	var axis_scale_ticks := primary_label_scale.get_ticks()
 
-	var view_rect := Rect2(134, 87, 1231, 683)
-
-	draw_rect(view_rect, Color.CADET_BLUE, false, 2)
 
 	#var middle: float = (min_value + max_value) / 2
 	var middle: float = 0.0
@@ -325,7 +325,8 @@ func _complete_rect_transforms(rects: Array[Rect2], axis: Vector2.Axis, offset_a
 		rects[i] = rect
 
 
-func scales_drawer() -> void:
+# Draws the scales and returns the view rect.
+func scales_drawer() -> Rect2:
 	var min_max := get_dynamic_min_max()
 	primary_y_scale.info.merge({"min_value": min_max[0], "max_value": min_max[1], "step": 20.0}, true)
 
@@ -398,3 +399,15 @@ func scales_drawer() -> void:
 		var _scale := scales[bottom[i]]
 		#draw_rect(rect, Color.LIGHT_CORAL.darkened(i / float(bottom.size())))
 		_scale.draw(rect, self)
+
+	return view_rect
+
+
+func check_cache() -> void:
+	if cache_dirty:
+		cache()
+
+
+func cache() -> void:
+	# Notify the primary "value" scale of any changes to min_value, max_value and step
+	var p_value_scale: Scale = primary_y_scale if direction == Direction.HORIZONTAL else primary_x_scale
