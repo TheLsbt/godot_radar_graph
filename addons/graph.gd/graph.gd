@@ -40,6 +40,7 @@ var dataset_groups := {
 }
 
 var cache_dirty := true
+var cache := {}
 
 
 var scales: Array[Scale] = []
@@ -90,100 +91,20 @@ func add_scale(mode: Scale.ScaleMode, pos: Scale.ScalePosition, info := {}, prim
 	return _scale
 
 
-## Returns an array with two elements, where index 0 is the `dynamic min value` and and
-## `dynamic max value`.
-func get_dynamic_min_max() -> PackedFloat32Array:
-	var drange: PackedFloat32Array = [min_value, max_value]
-
-	if not allow_dynamic_min_max:
-		return drange
-
-	var middle: float = 0.0
-
-	#var middle: float = (min_value + max_value) / 2
-
-	var sorted_dataset_groups := dataset_groups.keys()
-	sorted_dataset_groups.sort()
-
-	var group_bar_width := dataset_groups.keys().size() * bar_width + bar_seperation
-
-	for group in sorted_dataset_groups:
-		for index in index_count:
-			var accumulated := [middle, middle]
-			for dataset in dataset_groups[group]:
-				var values: Array = dataset["values"]
-
-				if index >= values.size():
-					break
-
-				var value = values[index]
-				var color: Color = dataset["color"]
-
-				# lo and hi just determine the rect, it is up to use to order them correctly, if not
-				# the bars may be able to draw ontop of one another.
-				# hi determines the top of it and lo the bottom.
-
-				var hi: float
-				var lo: float
-
-				# Flatten the array if there is only one element.
-				if typeof(value) == TYPE_ARRAY and value.size() == 1:
-					value = value[0]
-
-				match typeof(value):
-					TYPE_ARRAY:
-						# If there is only one element in the value we continue and skip this index.
-						if value.size() == 0:
-							break
-						# We can asume there is more than one element left becuase we flatten the array if
-						# there is one element.
-						else:
-							# eg. [10, -20]
-							if value[0] > value[1]:
-								hi = accumulated[1] + value[0]
-								lo = accumulated[1] + value[1]
-								accumulated[1] += value[1]
-							# eg. [8, 15]
-							else:
-								hi = accumulated[0] + value[1]
-								lo = accumulated[0] + value[0]
-								accumulated[0] += value[1]
-
-					TYPE_FLOAT, TYPE_INT:
-						if value < accumulated[1]:
-							hi = accumulated[1]
-							lo = hi + value
-
-							accumulated[1] += value
-						else:
-							hi = accumulated[0] + value
-							lo = accumulated[0]
-
-							accumulated[0] += value
-
-
-				drange[0] = minf(accumulated[1], drange[0])
-				drange[1] = maxf(accumulated[0], drange[1])
-
-	var snap := [
-		Util.snap_floorf(drange[0], maxf(1, dynamic_min_max_snap)),
-		Util.snap_ceilf(drange[1], maxf(1, dynamic_min_max_snap))]
-
-	return snap
-
-
 func _process(delta: float) -> void:
-	queue_redraw()
+	if is_node_ready():
+		check_cache()
+		queue_redraw()
 
 
-func _draw() -> void:
+func _cache_bars() -> void:
 	var view_rect := scales_drawer()
 	draw_rect(view_rect, Color.CADET_BLUE, false, 2)
 
 	var axis := int(direction)
 	var inv_axis := 1 - axis
 
-	var dynamic_min_max := get_dynamic_min_max()
+	var dynamic_min_max := [cache["cached_min_value"], cache["cached_max_value"]]
 
 	# Calculate the primary scale (based on direction), required to be in a range of  0 - 1
 	var primary_label_scale := primary_x_scale if direction == Direction.HORIZONTAL else primary_y_scale
@@ -328,7 +249,7 @@ func _complete_rect_transforms(rects: Array[Rect2], axis: Vector2.Axis, offset_a
 
 # Draws the scales and returns the view rect.
 func scales_drawer() -> Rect2:
-	var min_max := get_dynamic_min_max()
+	var min_max := [cache["cached_min_value"], cache["cached_max_value"]]
 	primary_y_scale.info.merge({"min_value": min_max[0], "max_value": min_max[1], "step": 20.0}, true)
 
 	var left: PackedInt32Array = []
@@ -407,10 +328,99 @@ func scales_drawer() -> Rect2:
 
 func check_cache() -> void:
 	if cache_dirty:
-		cache()
+		cache.clear()
+		do_cache()
 
 
-func cache() -> void:
+func _cache_min_max_value() -> void:
+	if not allow_dynamic_min_max:
+		cache["cached_min_value"] = min_value
+		cache["cached_max_value"] = max_value
+		return
+
+	var drange: PackedFloat32Array = [min_value, max_value]
+
+
+	var middle: float = 0.0
+
+	#var middle: float = (min_value + max_value) / 2
+
+	var sorted_dataset_groups := dataset_groups.keys()
+	sorted_dataset_groups.sort()
+
+	var group_bar_width := dataset_groups.keys().size() * bar_width + bar_seperation
+
+	for group in sorted_dataset_groups:
+		for index in index_count:
+			var accumulated := [middle, middle]
+			for dataset in dataset_groups[group]:
+				var values: Array = dataset["values"]
+
+				if index >= values.size():
+					break
+
+				var value = values[index]
+				var color: Color = dataset["color"]
+
+				# lo and hi just determine the rect, it is up to use to order them correctly, if not
+				# the bars may be able to draw ontop of one another.
+				# hi determines the top of it and lo the bottom.
+
+				var hi: float
+				var lo: float
+
+				# Flatten the array if there is only one element.
+				if typeof(value) == TYPE_ARRAY and value.size() == 1:
+					value = value[0]
+
+				match typeof(value):
+					TYPE_ARRAY:
+						# If there is only one element in the value we continue and skip this index.
+						if value.size() == 0:
+							break
+						# We can asume there is more than one element left becuase we flatten the array if
+						# there is one element.
+						else:
+							# eg. [10, -20]
+							if value[0] > value[1]:
+								hi = accumulated[1] + value[0]
+								lo = accumulated[1] + value[1]
+								accumulated[1] += value[1]
+							# eg. [8, 15]
+							else:
+								hi = accumulated[0] + value[1]
+								lo = accumulated[0] + value[0]
+								accumulated[0] += value[1]
+
+					TYPE_FLOAT, TYPE_INT:
+						if value < accumulated[1]:
+							hi = accumulated[1]
+							lo = hi + value
+
+							accumulated[1] += value
+						else:
+							hi = accumulated[0] + value
+							lo = accumulated[0]
+
+							accumulated[0] += value
+
+
+				drange[0] = minf(accumulated[1], drange[0])
+				drange[1] = maxf(accumulated[0], drange[1])
+
+	var snap := [
+		Util.snap_floorf(drange[0], maxf(1, dynamic_min_max_snap)),
+		Util.snap_ceilf(drange[1], maxf(1, dynamic_min_max_snap))]
+
+	cache["cached_min_value"] = snap[0]
+	cache["cached_max_value"] = snap[1]
+
+
+func do_cache() -> void:
+	await draw
+	_cache_min_max_value()
+	_cache_bars()
+
 	# Notify the primary "value" scale of any changes to min_value, max_value and step
 	var p_value_scale: Scale = primary_y_scale if direction == Direction.HORIZONTAL else primary_x_scale
-	p_value_scale.update({"min_value": min_value, "max_value": max_value, "step": step})
+	#p_value_scale.info.merge({"min_value": min_value, "max_value": max_value, "step": 20.0}, true)
